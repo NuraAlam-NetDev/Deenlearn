@@ -27,7 +27,7 @@ export const listLessons = asyncHandler(async (req, res) => {
   res.json({ lessons });
 });
 
-// GET /api/lessons/:id  (full lesson)
+// GET /api/lessons/:id  (full lesson + previous / next lesson for navigation)
 export const getLesson = asyncHandler(async (req, res) => {
   const lesson = await Lesson.findById(req.params.id).lean();
   if (!lesson) throw httpError(404, 'Lesson not found');
@@ -35,10 +35,30 @@ export const getLesson = asyncHandler(async (req, res) => {
   const course = await findCourseOr404(lesson.course);
   await requireAccess(req.user, course);
 
-  const completed = !!(await Progress.exists({
-    student: req.user._id,
-    lesson: lesson._id,
-    completed: true,
-  }));
-  res.json({ lesson, completed });
+  const here = { course: lesson.course };
+  const [completed, prevLesson, nextLesson] = await Promise.all([
+    Progress.exists({ student: req.user._id, lesson: lesson._id, completed: true }),
+    Lesson.findOne({
+      ...here,
+      $or: [
+        { order: { $lt: lesson.order } },
+        { order: lesson.order, _id: { $lt: lesson._id } },
+      ],
+    })
+      .sort({ order: -1, _id: -1 })
+      .select('title')
+      .lean(),
+    Lesson.findOne({
+      ...here,
+      $or: [
+        { order: { $gt: lesson.order } },
+        { order: lesson.order, _id: { $gt: lesson._id } },
+      ],
+    })
+      .sort({ order: 1, _id: 1 })
+      .select('title')
+      .lean(),
+  ]);
+
+  res.json({ lesson, completed: !!completed, prevLesson, nextLesson });
 });

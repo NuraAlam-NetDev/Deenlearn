@@ -16,3 +16,8 @@ export const atLeastOneField = [
   (obj) => Object.keys(obj).length > 0,
   { message: 'Provide at least one field to update' },
 ];
+// Spread into a z.object({ ...paginationFields(10, 50), ... }) for list endpoints
+export const paginationFields = (defaultLimit = 10, maxLimit = 100) => ({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(maxLimit).default(defaultLimit),
+});

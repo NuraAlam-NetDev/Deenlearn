@@ -4,10 +4,11 @@ import Enrollment from '../models/Enrollment.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta } from '../utils/pagination.js';
-import { canManage } from '../services/courseAccess.js';
+import { canManage, getProgressSummary } from '../services/courseAccess.js';
 import { attachCounts } from '../services/courseStats.js';
 
-// GET /api/courses  (public catalogue: published only)
+// GET /api/courses?q=&category=&page=&limit=   (public catalogue: published only)
+// Logged-in students also get enrolled / progress on each course.
 export const listCourses = asyncHandler(async (req, res) => {
   const { page, limit, category, q } = req.query;
 
@@ -25,6 +26,21 @@ export const listCourses = asyncHandler(async (req, res) => {
     Course.countDocuments(filter),
   ]);
   await attachCounts(courses);
+
+  const mine = new Map();
+  if (req.user && courses.length) {
+    const rows = await Enrollment.find({
+      student: req.user._id,
+      course: { $in: courses.map((c) => c._id) },
+    })
+      .select('course progress')
+      .lean();
+    rows.forEach((r) => mine.set(String(r.course), r.progress));
+  }
+  for (const c of courses) {
+    c.enrolled = mine.has(String(c._id));
+    if (c.enrolled) c.progress = mine.get(String(c._id));
+  }
 
   res.json({ courses, ...pageMeta(page, limit, total) });
 });
@@ -47,10 +63,11 @@ export const getCourse = asyncHandler(async (req, res) => {
     .sort({ order: 1 })
     .lean();
 
-  res.json({
-    course,
-    lessons,
-    canManage: manage,
-    enrollment: enrollment ? { progress: enrollment.progress, enrolledAt: enrollment.createdAt } : null,
-  });
+  let enrollmentInfo = null;
+  if (enrollment) {
+    const summary = await getProgressSummary(req.user._id, course._id);
+    enrollmentInfo = { ...summary, enrolledAt: enrollment.createdAt };
+  }
+
+  res.json({ course, lessons, canManage: manage, enrollment: enrollmentInfo });
 });

@@ -9,7 +9,7 @@ import { listCoursesQuery } from '../validators/course.js';
 // Public / student side. Teachers manage content under /api/teacher.
 const router = Router();
 
-router.get('/', validate(listCoursesQuery, 'query'), listCourses);
+router.get('/', optionalAuth, validate(listCoursesQuery, 'query'), listCourses);
 router.get('/:id', optionalAuth, getCourse);
 router.post('/:id/enroll', protect, authorize('student'), enroll);
 router.get('/:courseId/lessons', protect, listLessons);

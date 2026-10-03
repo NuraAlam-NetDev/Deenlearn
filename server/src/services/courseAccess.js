@@ -3,6 +3,7 @@ import Lesson from '../models/Lesson.js';
 import Enrollment from '../models/Enrollment.js';
 import Progress from '../models/Progress.js';
 import { httpError } from '../utils/httpError.js';
+import { calcPercent } from '../utils/progress.js';
 
 export async function findCourseOr404(id) {
   const course = await Course.findById(id);
@@ -24,15 +25,27 @@ export async function hasCourseAccess(user, course) {
   return !!(await Enrollment.exists({ student: user._id, course: course._id }));
 }
 
-// Recalculate one student's progress % for a course
-export async function recomputeEnrollment(studentId, courseId) {
-  const [total, done] = await Promise.all([
+// Live numbers for one student in one course
+export async function getProgressSummary(studentId, courseId) {
+  const [totalLessons, completedLessons] = await Promise.all([
     Lesson.countDocuments({ course: courseId }),
     Progress.countDocuments({ student: studentId, course: courseId, completed: true }),
   ]);
-  const progress = total ? Math.round((done / total) * 100) : 0;
-  await Enrollment.updateOne({ student: studentId, course: courseId }, { progress });
-  return progress;
+  return {
+    progress: calcPercent(completedLessons, totalLessons),
+    completedLessons,
+    totalLessons,
+  };
+}
+
+// Recalculate one student's progress % and store it on the enrollment
+export async function recomputeEnrollment(studentId, courseId) {
+  const summary = await getProgressSummary(studentId, courseId);
+  await Enrollment.updateOne(
+    { student: studentId, course: courseId },
+    { progress: summary.progress }
+  );
+  return summary;
 }
 
 // Recalculate every enrolled student's progress (after lessons added/removed)
@@ -51,11 +64,7 @@ export async function syncCourseProgress(courseId) {
     enrollments.map((e) => ({
       updateOne: {
         filter: { _id: e._id },
-        update: {
-          $set: {
-            progress: total ? Math.round(((done.get(String(e.student)) ?? 0) / total) * 100) : 0,
-          },
-        },
+        update: { $set: { progress: calcPercent(done.get(String(e.student)) ?? 0, total) } },
       },
     }))
   );
