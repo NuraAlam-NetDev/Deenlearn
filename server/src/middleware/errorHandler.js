@@ -16,6 +16,17 @@ export function errorHandler(err, _req, res, _next) {
   } else if (err.code === 11000) {
     status = 409;
     message = 'Duplicate value';
+  } else if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      status = 413;
+      message = `File is too large (max ${process.env.MAX_FILE_MB || 10} MB)`;
+    } else {
+      status = 400;
+      message =
+        err.code === 'LIMIT_UNEXPECTED_FILE'
+          ? 'Send exactly one file in the form field "file"'
+          : err.message;
+    }
   }
 
   if (status >= 500) console.error(err);

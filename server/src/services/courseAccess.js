@@ -18,12 +18,6 @@ export function canManage(user, course) {
   return String(teacherId) === String(user._id);
 }
 
-export function assertCanManage(user, course) {
-  if (!canManage(user, course)) {
-    throw httpError(403, 'Only the course teacher or an admin can do this');
-  }
-}
-
 // Manager OR enrolled student
 export async function hasCourseAccess(user, course) {
   if (canManage(user, course)) return true;

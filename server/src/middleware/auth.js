@@ -3,8 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { ACCESS_COOKIE, verifyAccessToken } from '../utils/tokens.js';
 
-// Requires a valid access-token cookie; attaches the fresh user to req.user.
-export const protect = asyncHandler(async (req, _res, next) => {
+async function authenticate(req) {
   const token = req.cookies?.[ACCESS_COOKIE];
   if (!token) throw httpError(401, 'Not authenticated');
 
@@ -18,21 +17,21 @@ export const protect = asyncHandler(async (req, _res, next) => {
 
   const user = await User.findById(payload.sub);
   if (!user) throw httpError(401, 'User no longer exists');
+  return user;
+}
 
-  req.user = user;
+// Requires a valid access-token cookie; attaches the fresh user to req.user.
+export const protect = asyncHandler(async (req, _res, next) => {
+  req.user = await authenticate(req);
   next();
 });
-// Like protect(), but never rejects: guests just continue without req.user.
-export const optionalAuth = asyncHandler(async (req, _res, next) => {
-  const token = req.cookies?.[ACCESS_COOKIE];
-  if (!token) return next();
 
+// Public route that behaves differently for logged-in users (never fails on 401).
+export const optionalAuth = asyncHandler(async (req, _res, next) => {
   try {
-    const payload = verifyAccessToken(token);
-    const user = await User.findById(payload.sub);
-    if (user) req.user = user;
-  } catch {
-    // Invalid or expired token: treat as guest
+    req.user = await authenticate(req);
+  } catch (err) {
+    if (err.status !== 401) throw err;
   }
   next();
 });

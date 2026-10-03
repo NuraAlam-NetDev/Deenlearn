@@ -17,3 +17,4 @@ export const listCoursesQuery = z.object({
   category: z.string().trim().toLowerCase().max(50).optional(),
   q: z.string().trim().max(100).optional(),
 });
+export const teacherListCoursesQuery = listCoursesQuery;

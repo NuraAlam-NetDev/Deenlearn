@@ -33,3 +33,9 @@ export const refreshLimiter = make({
   limit: 60,
   message: { message: 'Too many refresh attempts, please try again later.' },
 });
+
+export const uploadLimiter = make({
+  windowMs: 60 * 60 * 1000,
+  limit: 60,
+  message: { message: 'Too many uploads, please try again later.' },
+});

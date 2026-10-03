@@ -21,3 +21,10 @@ export const updateLessonSchema = createLessonSchema.partial().refine(...atLeast
 export const reorderLessonsSchema = z.object({
   lessonIds: z.array(objectId).min(1).max(500),
 });
+export const teacherListLessonsQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+
+  q: z.string().trim().max(100).optional(),
+});
