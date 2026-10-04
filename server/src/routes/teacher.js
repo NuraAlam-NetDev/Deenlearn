@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, authorize, requireApprovedTeacher } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loadOwnedCourse, loadOwnedLesson } from '../middleware/ownership.js';
 import { uploadSingle, requireUploads } from '../middleware/upload.js';
@@ -21,8 +21,8 @@ import {
 
 const router = Router();
 
-// Everything below: logged-in teachers only. Ownership is checked per course/lesson.
-router.use(protect, authorize('teacher'));
+// Everything below: logged-in, admin-approved teachers only. Ownership is checked per course/lesson.
+router.use(protect, authorize('teacher'), requireApprovedTeacher);
 
 const ownCourse = loadOwnedCourse('id');
 const ownCourseByCourseId = loadOwnedCourse('courseId');

@@ -1,12 +1,11 @@
 import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
-import Enrollment from '../models/Enrollment.js';
-import Progress from '../models/Progress.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta, escapeRegex } from '../utils/pagination.js';
 import { attachCounts } from '../services/courseStats.js';
 import { uploadFile, deleteAssets } from '../services/media.js';
+import { deleteCourseCascade } from '../services/courseCleanup.js';
 
 // GET /api/teacher/courses?page=&limit=&status=published|draft&q=
 export const listMyCourses = asyncHandler(async (req, res) => {
@@ -62,22 +61,7 @@ export const updateCourse = asyncHandler(async (req, res) => {
 
 // DELETE /api/teacher/courses/:id  (also removes lessons, enrollments, progress, uploaded files)
 export const deleteCourse = asyncHandler(async (req, res) => {
-  const course = req.course;
-
-  const lessons = await Lesson.find({ course: course._id }).select('attachments').lean();
-  const assets = lessons.flatMap((l) => l.attachments);
-  if (course.thumbnailPublicId) {
-    assets.push({ publicId: course.thumbnailPublicId, resourceType: 'image' });
-  }
-
-  await Promise.all([
-    Lesson.deleteMany({ course: course._id }),
-    Enrollment.deleteMany({ course: course._id }),
-    Progress.deleteMany({ course: course._id }),
-  ]);
-  await course.deleteOne();
-  await deleteAssets(assets);
-
+  await deleteCourseCascade(req.course);
   res.json({ message: 'Course deleted' });
 });
 

@@ -18,6 +18,9 @@ const BCRYPT_ROUNDS = 12;
 // Compared against when the email doesn't exist, so response time doesn't reveal it
 const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', BCRYPT_ROUNDS);
 
+const bannedError = (user) =>
+  httpError(403, `This account has been banned${user.banReason ? `: ${user.banReason}` : ''}`);
+
 // Create a refresh-token record and set both cookies
 async function startSession(res, user) {
   const jti = crypto.randomUUID();
@@ -37,7 +40,14 @@ export const register = asyncHandler(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   let user;
   try {
-    user = await User.create({ name, email, passwordHash, role });
+    user = await User.create({
+      name,
+      email,
+      passwordHash,
+      role,
+      // New teachers must be approved by an admin before they can manage courses
+      approvalStatus: role === 'teacher' ? 'pending' : 'approved',
+    });
   } catch (err) {
     if (err.code === 11000) throw httpError(409, 'Email is already registered');
     throw err;
@@ -53,6 +63,9 @@ export const login = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email }).select('+passwordHash');
   const valid = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
   if (!user || !valid) throw httpError(401, 'Invalid email or password');
+
+  // Only revealed after the password is correct
+  if (user.status === 'banned') throw bannedError(user);
 
   await startSession(res, user);
   res.json({ user });
@@ -84,6 +97,11 @@ export const refresh = asyncHandler(async (req, res) => {
   if (!user) {
     clearAuthCookies(res);
     throw httpError(401, 'User no longer exists');
+  }
+  if (user.status === 'banned') {
+    await RefreshToken.deleteMany({ user: user._id });
+    clearAuthCookies(res);
+    throw bannedError(user);
   }
 
   await startSession(res, user);

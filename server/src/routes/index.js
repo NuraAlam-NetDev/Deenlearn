@@ -5,6 +5,7 @@ import courses from './courses.js';
 import lessons from './lessons.js';
 import enrollments from './enrollments.js';
 import teacher from './teacher.js';
+import admin from './admin.js';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/courses', courses);
 router.use('/lessons', lessons);
 router.use('/enrollments', enrollments);
 router.use('/teacher', teacher);
+router.use('/admin', admin);
 
 export default router;

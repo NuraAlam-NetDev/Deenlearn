@@ -17,6 +17,8 @@ async function authenticate(req) {
 
   const user = await User.findById(payload.sub);
   if (!user) throw httpError(401, 'User no longer exists');
+  // Checked on every request, so a ban works immediately (not after the token expires)
+  if (user.status === 'banned') throw httpError(403, 'This account has been banned');
   return user;
 }
 
@@ -26,12 +28,12 @@ export const protect = asyncHandler(async (req, _res, next) => {
   next();
 });
 
-// Public route that behaves differently for logged-in users (never fails on 401).
+// Public route that behaves differently for logged-in users (never fails on 401/403).
 export const optionalAuth = asyncHandler(async (req, _res, next) => {
   try {
     req.user = await authenticate(req);
   } catch (err) {
-    if (err.status !== 401) throw err;
+    if (err.status !== 401 && err.status !== 403) throw err;
   }
   next();
 });
@@ -46,3 +48,15 @@ export const authorize =
     }
     next();
   };
+
+// Use after authorize('teacher'): teachers must be approved by an admin first
+export const requireApprovedTeacher = (req, _res, next) => {
+  const status = req.user.approvalStatus;
+  if (status === 'pending') {
+    return next(httpError(403, 'Your teacher account is waiting for admin approval'));
+  }
+  if (status === 'rejected') {
+    return next(httpError(403, 'Your teacher application was not approved'));
+  }
+  next();
+};
