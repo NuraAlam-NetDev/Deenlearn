@@ -1,36 +1,36 @@
 import { useFetch } from '../../hooks/useFetch.js';
 import { Spinner } from '../../components/Spinner.jsx';
 import Alert from '../../components/Alert.jsx';
-
-function Stat({ label, value, highlight }) {
-  return (
-    <div className={`rounded-lg p-4 shadow-sm ${highlight ? 'bg-amber-50' : 'bg-white'}`}>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-800">{value}</p>
-    </div>
-  );
-}
+import { StatCard } from '../../components/ui/Card.jsx';
 
 export default function AdminHome() {
   const { data, loading, error } = useFetch('/admin/stats');
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold text-brand-700">Admin overview</h1>
+      <h1 className="mb-5 text-3xl font-bold text-brand-800">Admin overview</h1>
 
       {loading && <Spinner />}
       {error && <Alert>{error}</Alert>}
 
       {data && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Users" value={data.users.total} />
-          <Stat label="Students" value={data.users.students} />
-          <Stat label="Teachers" value={data.users.teachers} />
-          <Stat label="Pending teachers" value={data.users.pendingTeachers} highlight={data.users.pendingTeachers > 0} />
-          <Stat label="Banned users" value={data.users.banned} />
-          <Stat label="Courses" value={`${data.courses.published} / ${data.courses.total} published`} />
-          <Stat label="Lessons" value={data.lessons.total} />
-          <Stat label="Enrollments" value={`${data.enrollments.completed} / ${data.enrollments.total} completed`} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Users" value={data.users.total} hint={`${data.users.newLast7Days} new this week`} />
+          <StatCard label="Students" value={data.users.students} />
+          <StatCard label="Teachers" value={data.users.teachers} />
+          <StatCard
+            label="Pending teachers"
+            value={data.users.pendingTeachers}
+            tone={data.users.pendingTeachers > 0 ? 'warning' : 'default'}
+          />
+          <StatCard label="Banned users" value={data.users.banned} />
+          <StatCard label="Courses" value={data.courses.total} hint={`${data.courses.published} published`} />
+          <StatCard label="Lessons" value={data.lessons.total} />
+          <StatCard
+            label="Enrollments"
+            value={data.enrollments.total}
+            hint={`${data.enrollments.completed} completed`}
+          />
         </div>
       )}
     </div>

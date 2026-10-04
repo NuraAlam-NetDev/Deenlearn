@@ -1,68 +1,75 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import { getErrorMessage } from '../services/api.js';
+import { useForm } from '../hooks/useForm.js';
+import { getErrorMessage, getFieldErrors } from '../services/api.js';
+import { validateLogin } from '../utils/validators.js';
 import FormField from '../components/FormField.jsx';
 import Alert from '../components/Alert.jsx';
+import Button from '../components/ui/Button.jsx';
+import { Card, CardBody } from '../components/ui/Card.jsx';
 
 export default function Login() {
   const { login } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { values, errors, onChange, onBlur, handleSubmit, setServerErrors } = useForm({
+    initialValues: { email: '', password: '' },
+    validate: validateLogin,
+  });
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError('');
+  const onSubmit = handleSubmit(async (data) => {
+    setFormError('');
     setSubmitting(true);
     try {
-      await login(form);
+      await login({ email: data.email.trim(), password: data.password });
       // GuestRoute redirects automatically once the user is set
     } catch (err) {
-      setError(getErrorMessage(err));
+      const fieldErrors = getFieldErrors(err);
+      if (Object.keys(fieldErrors).length) setServerErrors(fieldErrors);
+      else setFormError(getErrorMessage(err)); // e.g. wrong password, banned account
       setSubmitting(false);
     }
-  }
+  });
 
   return (
-    <div className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow">
-      <h1 className="mb-4 text-2xl font-bold text-brand-700">Login</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        {error && <Alert>{error}</Alert>}
-        <FormField
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={form.email}
-          onChange={onChange}
-        />
-        <FormField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={form.password}
-          onChange={onChange}
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-brand-700 py-2 font-medium text-white hover:bg-brand-600 disabled:opacity-60"
-        >
-          {submitting ? 'Logging in…' : 'Login'}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-sm text-slate-600">
-        New here?{' '}
-        <Link to="/register" className="font-medium text-brand-600 underline">
-          Create an account
-        </Link>
-      </p>
-    </div>
+    <Card className="mx-auto max-w-md">
+      <CardBody className="sm:p-8">
+        <h1 className="mb-1 text-3xl font-bold text-brand-800">Welcome back</h1>
+        <p className="mb-5 text-sm text-slate-500">Login to continue learning.</p>
+        <form onSubmit={onSubmit} noValidate className="space-y-4">
+          {formError && <Alert>{formError}</Alert>}
+          <FormField
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={values.email}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={errors.email}
+          />
+          <FormField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={values.password}
+            onChange={onChange}
+            onBlur={onBlur}
+            error={errors.password}
+          />
+          <Button type="submit" full loading={submitting}>
+            {submitting ? 'Logging in…' : 'Login'}
+          </Button>
+        </form>
+        <p className="mt-5 text-center text-sm text-slate-600">
+          New here?{' '}
+          <Link to="/register" className="font-semibold text-brand-600 underline">
+            Create an account
+          </Link>
+        </p>
+      </CardBody>
+    </Card>
   );
 }

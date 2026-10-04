@@ -50,4 +50,11 @@ export function getErrorMessage(error) {
   return data?.message || error.message || 'Something went wrong';
 }
 
+// Server validation errors -> { fieldName: message }, so forms can show them next to the field
+export function getFieldErrors(error) {
+  const list = error?.response?.data?.errors;
+  if (error?.response?.status !== 400 || !Array.isArray(list)) return {};
+  return Object.fromEntries(list.filter((e) => e.field).map((e) => [e.field, e.message]));
+}
+
 export default api;
