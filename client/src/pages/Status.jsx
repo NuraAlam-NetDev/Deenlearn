@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import api, { getErrorMessage } from '../services/api.js';
 
 export default function Status() {
   const [state, setState] = useState({ loading: true });
 
   useEffect(() => {
-    api('/health')
-      .then((data) => setState({ data }))
-      .catch((error) => setState({ error: error.message }));
+    // validateStatus: a 503 (database down) still carries a useful JSON body
+    api
+      .get('/health', { validateStatus: (s) => s < 600 })
+      .then((res) => setState({ data: res.data }))
+      .catch((err) => setState({ error: getErrorMessage(err) }));
   }, []);
 
   if (state.loading) return <p>Checking API…</p>;
