@@ -1,5 +1,7 @@
 import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
+import Enrollment from '../models/Enrollment.js';
+import Progress from '../models/Progress.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta, escapeRegex } from '../utils/pagination.js';
@@ -120,4 +122,50 @@ export const deleteThumbnail = asyncHandler(async (req, res) => {
 
   if (old) await deleteAssets([old]);
   res.json({ course });
+});
+
+// GET /api/teacher/courses/:id/stats
+// { stats: { lessons, students, completed, avgProgress, newLast7Days, perLesson: [{ _id, title, order, completions }] } }
+export const getCourseStats = asyncHandler(async (req, res) => {
+  const courseId = req.course._id;
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [lessons, enrollmentRows, doneRows] = await Promise.all([
+    Lesson.find({ course: courseId }).select('title order').sort({ order: 1 }).lean(),
+    Enrollment.aggregate([
+      { $match: { course: courseId } },
+      {
+        $group: {
+          _id: null,
+          students: { $sum: 1 },
+          avgProgress: { $avg: '$progress' },
+          completed: { $sum: { $cond: [{ $gte: ['$progress', 100] }, 1, 0] } },
+          newLast7Days: { $sum: { $cond: [{ $gte: ['$createdAt', weekAgo] }, 1, 0] } },
+        },
+      },
+    ]),
+    Progress.aggregate([
+      { $match: { course: courseId, completed: true } },
+      { $group: { _id: '$lesson', n: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const totals = enrollmentRows[0] || { students: 0, avgProgress: 0, completed: 0, newLast7Days: 0 };
+  const done = new Map(doneRows.map((r) => [String(r._id), r.n]));
+
+  res.json({
+    stats: {
+      lessons: lessons.length,
+      students: totals.students,
+      completed: totals.completed,
+      avgProgress: Math.round(totals.avgProgress || 0),
+      newLast7Days: totals.newLast7Days,
+      perLesson: lessons.map((l) => ({
+        _id: l._id,
+        title: l.title,
+        order: l.order,
+        completions: done.get(String(l._id)) ?? 0,
+      })),
+    },
+  });
 });

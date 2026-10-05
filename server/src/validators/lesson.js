@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { httpUrl, optionalUrl, objectId, atLeastOneField } from './common.js';
+import { sanitizeRichText } from '../utils/sanitizeRichText.js';
 
 const attachmentSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -10,7 +11,7 @@ const attachmentSchema = z.object({
 
 export const createLessonSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(150),
-  content: z.string().max(200000).default(''),
+  content: z.string().max(200000).default('').transform(sanitizeRichText), // HTML from the editor: strip scripts etc.
   attachments: z.array(attachmentSchema).max(20).default([]),
   order: z.number().int().min(0).optional(), // omitted -> added at the end
   videoUrl: optionalUrl.default(''),
@@ -24,7 +25,7 @@ export const reorderLessonsSchema = z.object({
 export const teacherListLessonsQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
 
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
 
   q: z.string().trim().max(100).optional(),
 });

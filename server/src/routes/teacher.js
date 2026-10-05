@@ -6,7 +6,7 @@ import { uploadSingle, requireUploads } from '../middleware/upload.js';
 import { uploadLimiter } from '../middleware/rateLimiters.js';
 import {
   listMyCourses, getMyCourse, createCourse, updateCourse, deleteCourse,
-  publishCourse, unpublishCourse, uploadThumbnail, deleteThumbnail,
+  publishCourse, unpublishCourse, uploadThumbnail, deleteThumbnail, getCourseStats,
 } from '../controllers/teacherCourseController.js';
 import {
   listCourseLessons, getLesson, createLesson, updateLesson, deleteLesson,
@@ -34,6 +34,8 @@ router.post('/courses', validate(createCourseSchema), createCourse);
 router.get('/courses/:id', ownCourse, getMyCourse);
 router.patch('/courses/:id', ownCourse, validate(updateCourseSchema), updateCourse);
 router.delete('/courses/:id', ownCourse, deleteCourse);
+
+router.get('/courses/:id/stats', ownCourse, getCourseStats);
 
 router.patch('/courses/:id/publish', ownCourse, publishCourse);
 router.patch('/courses/:id/unpublish', ownCourse, unpublishCourse);

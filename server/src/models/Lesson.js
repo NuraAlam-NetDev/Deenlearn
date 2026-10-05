@@ -26,7 +26,7 @@ const attachmentSchema = new mongoose.Schema(
 
     kind: {
       type: String,
-      enum: ['pdf', 'image'],
+      enum: ['pdf', 'image', 'audio'],
       required: true,
     },
 
@@ -38,7 +38,7 @@ const attachmentSchema = new mongoose.Schema(
 
     resourceType: {
       type: String,
-      enum: ['image', 'raw'],
+      enum: ['image', 'raw', 'video'],
       required: true,
     }, // Cloudinary resource type
   },
