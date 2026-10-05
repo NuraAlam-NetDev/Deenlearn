@@ -6,6 +6,7 @@ import AdminLayout from './layouts/AdminLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import GuestRoute from './components/GuestRoute.jsx';
 import Placeholder from './components/Placeholder.jsx';
+import ApprovedTeacherRoute from './components/ApprovedTeacherRoute.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -16,6 +17,10 @@ import Design from './pages/Design.jsx';
 import NotFound from './pages/NotFound.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
 import TeacherHome from './pages/teacher/TeacherHome.jsx';
+import MyCourses from './pages/teacher/MyCourses.jsx';
+import CourseForm from './pages/teacher/CourseForm.jsx';
+import CourseManage from './pages/teacher/CourseManage.jsx';
+import LessonEditor from './pages/teacher/LessonEditor.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 
 export default function App() {
@@ -51,7 +56,14 @@ export default function App() {
       <Route element={<ProtectedRoute roles={['teacher']} />}>
         <Route path="teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherHome />} />
-          <Route path="courses" element={<Placeholder title="Manage courses" />} />
+          <Route element={<ApprovedTeacherRoute />}>
+            <Route path="courses" element={<MyCourses />} />
+            <Route path="courses/new" element={<CourseForm />} />
+            <Route path="courses/:id" element={<CourseManage />} />
+            <Route path="courses/:id/edit" element={<CourseForm />} />
+            <Route path="courses/:courseId/lessons/new" element={<LessonEditor />} />
+            <Route path="courses/:courseId/lessons/:lessonId" element={<LessonEditor />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
