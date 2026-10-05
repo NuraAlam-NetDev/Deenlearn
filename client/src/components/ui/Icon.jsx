@@ -47,19 +47,29 @@ const PATHS = {
   ],
   upload: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M17 8l-5-5-5 5', 'M12 3v12'],
   file: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6'],
+  bookmark: ['M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'],
+  play: ['M5 3l14 9-14 9V3z'],
+  paperclip: [
+    'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48',
+  ],
+  list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+  external: ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14L21 3'],
+  'arrow-right': ['M5 12h14', 'M12 5l7 7-7 7'],
+  circle: [CIRCLE],
   grip: ['M9 5h.01', 'M15 5h.01', 'M9 12h.01', 'M15 12h.01', 'M9 19h.01', 'M15 19h.01'],
 };
 
 // Icons that point "forward" must mirror in right-to-left layouts
-const MIRROR_IN_RTL = new Set(['logout', 'chevron-left', 'chevron-right']);
+const MIRROR_IN_RTL = new Set(['logout', 'chevron-left', 'chevron-right', 'arrow-right']);
 
-export default function Icon({ name, className = 'h-5 w-5' }) {
+// filled: solid shape (e.g. a bookmark that is switched on)
+export default function Icon({ name, className = 'h-5 w-5', filled = false }) {
   const paths = PATHS[name];
   if (!paths) return null;
   return (
     <svg
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"

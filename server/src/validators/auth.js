@@ -18,6 +18,21 @@ export const registerSchema = z.object({
   role: z.enum(['student', 'teacher']).default('student'),
 });
 
+// Email is not editable here (changing it needs verification), only the display name
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Name is too short').max(100),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required').max(72),
+    newPassword: password,
+  })
+  .refine((v) => v.currentPassword !== v.newPassword, {
+    path: ['newPassword'],
+    message: 'New password must be different from the current one',
+  });
+
 export const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Password is required').max(72),

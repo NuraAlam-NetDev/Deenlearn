@@ -16,6 +16,10 @@ import Status from './pages/Status.jsx';
 import Design from './pages/Design.jsx';
 import NotFound from './pages/NotFound.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
+import StudentCourses from './pages/student/StudentCourses.jsx';
+import LessonReader from './pages/student/LessonReader.jsx';
+import Bookmarks from './pages/student/Bookmarks.jsx';
+import Profile from './pages/student/Profile.jsx';
 import TeacherHome from './pages/teacher/TeacherHome.jsx';
 import MyCourses from './pages/teacher/MyCourses.jsx';
 import CourseForm from './pages/teacher/CourseForm.jsx';
@@ -47,7 +51,10 @@ export default function App() {
       <Route element={<ProtectedRoute roles={['student']} />}>
         <Route path="student" element={<StudentLayout />}>
           <Route index element={<StudentHome />} />
-          <Route path="courses" element={<Placeholder title="My courses" />} />
+          <Route path="courses" element={<StudentCourses />} />
+          <Route path="courses/:courseId/lessons/:lessonId" element={<LessonReader />} />
+          <Route path="bookmarks" element={<Bookmarks />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

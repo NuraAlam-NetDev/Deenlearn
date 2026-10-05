@@ -41,9 +41,12 @@ export default function AuthProvider({ children }) {
     }
   }, []);
 
+  // After the profile is edited the server returns the fresh user; keep the UI in sync
+  const updateUser = useCallback((next) => setUser(next), []);
+
   const value = useMemo(
-    () => ({ user, loading, isAuthenticated: !!user, login, register, logout }),
-    [user, loading, login, register, logout]
+    () => ({ user, loading, isAuthenticated: !!user, login, register, logout, updateUser }),
+    [user, loading, login, register, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

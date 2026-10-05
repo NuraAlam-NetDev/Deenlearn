@@ -46,6 +46,7 @@ export function CourseCard({
   teacher,
   category,
   lessonCount,
+  completedLessons,
   studentCount,
   progress,
   thumbnail,
@@ -62,7 +63,10 @@ export function CourseCard({
 
   const meta = [];
   if (teacher) meta.push(<span key="t" dir="auto">{teacher}</span>);
-  if (lessonCount != null) meta.push(`${lessonCount} lesson${lessonCount === 1 ? '' : 's'}`);
+  if (lessonCount != null) {
+    const noun = `lesson${lessonCount === 1 ? '' : 's'}`;
+    meta.push(completedLessons != null ? `${completedLessons} of ${lessonCount} ${noun} done` : `${lessonCount} ${noun}`);
+  }
   if (studentCount) meta.push(`${studentCount} learner${studentCount === 1 ? '' : 's'}`);
 
   return (

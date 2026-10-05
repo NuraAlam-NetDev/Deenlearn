@@ -11,6 +11,44 @@ export async function findCourseOr404(id) {
   return course;
 }
 
+// A lesson the student may study: it must exist and the student must be enrolled in its course
+export async function findEnrolledLesson(studentId, lessonId) {
+  const lesson = await Lesson.findById(lessonId);
+  if (!lesson) throw httpError(404, 'Lesson not found');
+
+  const enrolled = await Enrollment.exists({ student: studentId, course: lesson.course });
+  if (!enrolled) throw httpError(403, 'Enroll in this course first');
+  return lesson;
+}
+
+// Where to send a student who clicks "continue" on each of these courses.
+// Map: courseId -> { firstLessonId, nextLessonId }
+//   nextLessonId = first lesson (by order) not completed yet, null when everything is done.
+// Courses without lessons are absent from the map.
+export async function getResumeLessons(studentId, courseIds) {
+  const result = new Map();
+  if (!courseIds.length) return result;
+
+  const [lessons, doneRows] = await Promise.all([
+    Lesson.find({ course: { $in: courseIds } })
+      .select('course')
+      .sort({ order: 1, _id: 1 })
+      .lean(),
+    Progress.find({ student: studentId, course: { $in: courseIds }, completed: true })
+      .select('lesson')
+      .lean(),
+  ]);
+  const done = new Set(doneRows.map((p) => String(p.lesson)));
+
+  for (const lesson of lessons) {
+    const key = String(lesson.course);
+    const entry = result.get(key) ?? { firstLessonId: lesson._id, nextLessonId: null };
+    if (!entry.nextLessonId && !done.has(String(lesson._id))) entry.nextLessonId = lesson._id;
+    result.set(key, entry);
+  }
+  return result;
+}
+
 // Course owner (teacher) or admin
 export function canManage(user, course) {
   if (!user) return false;

@@ -125,3 +125,31 @@ export const logout = asyncHandler(async (req, res) => {
 export const me = (req, res) => {
   res.json({ user: req.user });
 };
+
+// PATCH /api/auth/me   { name }
+export const updateProfile = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { name: req.body.name },
+    { new: true, runValidators: true }
+  );
+  res.json({ user });
+});
+
+// PUT /api/auth/password   { currentPassword, newPassword }
+// Signs out every other device, then keeps this one logged in with a fresh session.
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user._id).select('+passwordHash');
+  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    throw httpError(400, 'Current password is incorrect');
+  }
+
+  user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await user.save();
+
+  await RefreshToken.deleteMany({ user: user._id });
+  await startSession(res, user);
+  res.json({ message: 'Password changed' });
+});

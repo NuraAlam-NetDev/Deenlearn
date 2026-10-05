@@ -2,13 +2,16 @@ import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
 import Enrollment from '../models/Enrollment.js';
 import Progress from '../models/Progress.js';
+import Bookmark from '../models/Bookmark.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta, escapeRegex } from '../utils/pagination.js';
 import { calcPercent } from '../utils/progress.js';
 import {
   findCourseOr404,
+  findEnrolledLesson,
   getProgressSummary,
+  getResumeLessons,
   recomputeEnrollment,
 } from '../services/courseAccess.js';
 
@@ -72,21 +75,77 @@ export const myEnrollments = asyncHandler(async (req, res) => {
   const totals = new Map(totalRows.map((r) => [String(r._id), r.n]));
   const dones = new Map(doneRows.map((r) => [String(r._id), r.n]));
 
+  const resume = await getResumeLessons(req.user._id, courseIds);
+
   const enrollments = items.map((e) => {
     const totalLessons = totals.get(String(e.course._id)) ?? 0;
     const completedLessons = dones.get(String(e.course._id)) ?? 0;
+    const where = resume.get(String(e.course._id));
     return {
       _id: e._id,
       course: e.course,
       progress: calcPercent(completedLessons, totalLessons),
       completedLessons,
       totalLessons,
+      // For "continue learning": first lesson not done yet (null when finished) and the very first lesson
+      nextLessonId: where?.nextLessonId ?? null,
+      firstLessonId: where?.firstLessonId ?? null,
       enrolledAt: e.createdAt,
       lastActivityAt: e.updatedAt,
     };
   });
 
   res.json({ enrollments, ...pageMeta(page, limit, total) });
+});
+
+// GET /api/enrollments/summary
+// Numbers for the dashboard + the "continue learning" target (the most recently active
+// course that still has an unfinished lesson).
+export const mySummary = asyncHandler(async (req, res) => {
+  const studentId = req.user._id;
+
+  const [enrollments, completedLessons, bookmarks] = await Promise.all([
+    Enrollment.find({ student: studentId }).sort({ updatedAt: -1 }).select('course progress').lean(),
+    Progress.countDocuments({ student: studentId, completed: true }),
+    Bookmark.countDocuments({ student: studentId }),
+  ]);
+
+  const completedCourses = enrollments.filter((e) => e.progress === 100).length;
+
+  // Look at a handful of recent unfinished courses; the first with a lesson left wins
+  const candidates = enrollments.filter((e) => e.progress < 100).slice(0, 10);
+  const resume = await getResumeLessons(
+    studentId,
+    candidates.map((e) => e.course)
+  );
+  const target = candidates.find((e) => resume.get(String(e.course))?.nextLessonId);
+
+  let continueLearning = null;
+  if (target) {
+    const nextLessonId = resume.get(String(target.course)).nextLessonId;
+    const [course, lesson] = await Promise.all([
+      Course.findById(target.course).select('title').lean(),
+      Lesson.findById(nextLessonId).select('title order').lean(),
+    ]);
+    if (course && lesson) {
+      continueLearning = {
+        courseId: course._id,
+        courseTitle: course.title,
+        lessonId: lesson._id,
+        lessonTitle: lesson.title,
+        progress: target.progress,
+      };
+    }
+  }
+
+  res.json({
+    enrolledCourses: enrollments.length,
+    completedCourses,
+    inProgressCourses: enrollments.length - completedCourses,
+    completedLessons,
+    bookmarks,
+    continueLearning,
+  });
 });
 
 // GET /api/enrollments/:courseId/progress
@@ -128,18 +187,9 @@ export const courseProgress = asyncHandler(async (req, res) => {
   });
 });
 
-async function loadEnrolledLesson(req) {
-  const lesson = await Lesson.findById(req.params.id);
-  if (!lesson) throw httpError(404, 'Lesson not found');
-
-  const enrolled = await Enrollment.exists({ student: req.user._id, course: lesson.course });
-  if (!enrolled) throw httpError(403, 'Enroll in this course first');
-  return lesson;
-}
-
 // POST /api/lessons/:id/complete
 export const markComplete = asyncHandler(async (req, res) => {
-  const lesson = await loadEnrolledLesson(req);
+  const lesson = await findEnrolledLesson(req.user._id, req.params.id);
   const filter = { student: req.user._id, lesson: lesson._id };
 
   const existing = await Progress.findOne(filter).select('completed').lean();
@@ -157,7 +207,7 @@ export const markComplete = asyncHandler(async (req, res) => {
 
 // DELETE /api/lessons/:id/complete
 export const markIncomplete = asyncHandler(async (req, res) => {
-  const lesson = await loadEnrolledLesson(req);
+  const lesson = await findEnrolledLesson(req.user._id, req.params.id);
 
   await Progress.updateOne(
     { student: req.user._id, lesson: lesson._id },

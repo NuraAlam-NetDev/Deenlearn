@@ -1,5 +1,6 @@
 import Lesson from '../models/Lesson.js';
 import Progress from '../models/Progress.js';
+import Bookmark from '../models/Bookmark.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta } from '../utils/pagination.js';
@@ -58,7 +59,11 @@ export const deleteLesson = asyncHandler(async (req, res) => {
   const lesson = req.lesson;
   const assets = lesson.attachments.map((a) => a.toObject());
 
-  await Promise.all([lesson.deleteOne(), Progress.deleteMany({ lesson: lesson._id })]);
+  await Promise.all([
+    lesson.deleteOne(),
+    Progress.deleteMany({ lesson: lesson._id }),
+    Bookmark.deleteMany({ lesson: lesson._id }),
+  ]);
   await syncCourseProgress(req.course._id);
   await deleteAssets(assets);
 
