@@ -3,6 +3,8 @@ import Lesson from '../models/Lesson.js';
 import Enrollment from '../models/Enrollment.js';
 import Progress from '../models/Progress.js';
 import Bookmark from '../models/Bookmark.js';
+import Quiz from '../models/Quiz.js';
+import QuizAttempt from '../models/QuizAttempt.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta, escapeRegex } from '../utils/pagination.js';
@@ -191,6 +193,12 @@ export const courseProgress = asyncHandler(async (req, res) => {
 export const markComplete = asyncHandler(async (req, res) => {
   const lesson = await findEnrolledLesson(req.user._id, req.params.id);
   const filter = { student: req.user._id, lesson: lesson._id };
+
+  // A published quiz marked "required" must be passed first
+  const gate = await Quiz.findOne({ lesson: lesson._id, published: true, required: true }).select('_id').lean();
+  if (gate && !(await QuizAttempt.exists({ student: req.user._id, quiz: gate._id, passed: true }))) {
+    throw httpError(400, 'Pass the quiz for this lesson before marking it complete');
+  }
 
   const existing = await Progress.findOne(filter).select('completed').lean();
   if (!existing?.completed) {

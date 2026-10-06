@@ -29,10 +29,10 @@ app.use(
 );
 
 // Most bodies are tiny (32kb leaves room for long Bengali/Arabic text, 3 bytes per character).
-// Rich-text lessons can be large, so only lesson create/update get the bigger limit.
+// Rich-text lessons and quizzes (up to 40 questions) can be large, so only those get the bigger limit.
 const smallJson = express.json({ limit: '32kb' });
 const lessonJson = express.json({ limit: '600kb' });
-const LESSON_BODY = /^\/api\/teacher\/(courses\/[a-f\d]{24}\/lessons|lessons\/[a-f\d]{24})\/?$/i;
+const LESSON_BODY = /^\/api\/teacher\/(courses\/[a-f\d]{24}\/lessons|lessons\/[a-f\d]{24}(\/quiz)?)\/?$/i;
 app.use((req, res, next) => (LESSON_BODY.test(req.path) ? lessonJson : smallJson)(req, res, next));
 app.use(cookieParser());
 

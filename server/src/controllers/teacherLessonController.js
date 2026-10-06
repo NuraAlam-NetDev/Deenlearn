@@ -1,6 +1,11 @@
 import Lesson from '../models/Lesson.js';
 import Progress from '../models/Progress.js';
 import Bookmark from '../models/Bookmark.js';
+import Quiz from '../models/Quiz.js';
+import QuizAttempt from '../models/QuizAttempt.js';
+import Note from '../models/Note.js';
+import Question from '../models/Question.js';
+import Reply from '../models/Reply.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import { pageMeta } from '../utils/pagination.js';
@@ -63,6 +68,11 @@ export const deleteLesson = asyncHandler(async (req, res) => {
     lesson.deleteOne(),
     Progress.deleteMany({ lesson: lesson._id }),
     Bookmark.deleteMany({ lesson: lesson._id }),
+    Quiz.deleteMany({ lesson: lesson._id }),
+    QuizAttempt.deleteMany({ lesson: lesson._id }),
+    Note.deleteMany({ lesson: lesson._id }),
+    Question.deleteMany({ lesson: lesson._id }),
+    Reply.deleteMany({ lesson: lesson._id }),
   ]);
   await syncCourseProgress(req.course._id);
   await deleteAssets(assets);

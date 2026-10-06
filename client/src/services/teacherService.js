@@ -43,3 +43,7 @@ export const uploadThumbnail = (courseId, file, options) =>
   upload(`/teacher/courses/${courseId}/thumbnail`, file, options);
 export const deleteThumbnail = (courseId) =>
   api.delete(`/teacher/courses/${courseId}/thumbnail`).then(data);
+
+// ---- Quiz (one per lesson; the whole quiz is saved at once) ----
+export const saveQuiz = (lessonId, body) => api.put(`/teacher/lessons/${lessonId}/quiz`, body).then(data);
+export const deleteQuiz = (lessonId) => api.delete(`/teacher/lessons/${lessonId}/quiz`).then(data);

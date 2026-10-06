@@ -11,3 +11,11 @@ export function formatDate(value) {
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
+
+// "5 Oct 2026, 14:30" in the visitor's own language and calendar format
+export function formatDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}

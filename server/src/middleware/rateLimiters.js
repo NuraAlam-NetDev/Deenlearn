@@ -39,3 +39,10 @@ export const uploadLimiter = make({
   limit: 60,
   message: { message: 'Too many uploads, please try again later.' },
 });
+
+// Posting questions and replies: stops flooding a lesson's discussion
+export const contentLimiter = make({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  message: { message: 'You are posting too fast, please try again in a few minutes.' },
+});

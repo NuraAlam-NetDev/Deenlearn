@@ -17,3 +17,12 @@ export const setLessonBookmark = (id, bookmarked) =>
 // ---- Profile ----
 export const updateProfile = (body) => api.patch('/auth/me', body).then(data);
 export const changePassword = (body) => api.put('/auth/password', body).then(data);
+
+// ---- Quiz ----
+// answers: [{ question, selected: [optionId, ...] }]
+export const submitQuizAttempt = (lessonId, answers) =>
+  api.post(`/lessons/${lessonId}/quiz/attempts`, { answers }).then(data);
+
+// ---- Notes ----
+// An empty string deletes the note
+export const saveNote = (lessonId, content) => api.put(`/lessons/${lessonId}/note`, { content }).then(data);

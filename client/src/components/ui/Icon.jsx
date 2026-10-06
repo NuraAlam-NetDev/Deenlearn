@@ -57,6 +57,17 @@ const PATHS = {
   'arrow-right': ['M5 12h14', 'M12 5l7 7-7 7'],
   circle: [CIRCLE],
   grip: ['M9 5h.01', 'M15 5h.01', 'M9 12h.01', 'M15 12h.01', 'M9 19h.01', 'M15 19h.01'],
+  tick: ['M20 6L9 17l-5-5'],
+  award: ['M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z', 'M8.21 13.89L7 23l5-3 5 3-1.21-9.12'],
+  message: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
+  download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
+  help: [CIRCLE, 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3', 'M12 17h.01'],
+  clipboard: [
+    'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2',
+    'M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z',
+  ],
+  'arrow-up': ['M12 19V5', 'M5 12l7-7 7 7'],
+  'arrow-down': ['M12 5v14', 'M19 12l-7 7-7-7'],
 };
 
 // Icons that point "forward" must mirror in right-to-left layouts

@@ -68,6 +68,24 @@ function LessonRow({ lesson, index, courseId, disabled, onDelete }) {
         </div>
 
         <ButtonLink
+          to={`/teacher/courses/${courseId}/lessons/${lesson._id}/quiz`}
+          variant="ghost"
+          size="sm"
+          aria-label={`Quiz for ${lesson.title}`}
+        >
+          <Icon name="clipboard" className="h-4 w-4" />
+          <span className="hidden sm:inline">Quiz</span>
+        </ButtonLink>
+        <ButtonLink
+          to={`/teacher/courses/${courseId}/lessons/${lesson._id}/discussion`}
+          variant="ghost"
+          size="sm"
+          aria-label={`Questions about ${lesson.title}`}
+        >
+          <Icon name="message" className="h-4 w-4" />
+          <span className="hidden sm:inline">Q&amp;A</span>
+        </ButtonLink>
+        <ButtonLink
           to={`/teacher/courses/${courseId}/lessons/${lesson._id}`}
           variant="ghost"
           size="sm"
@@ -170,7 +188,7 @@ export default function LessonManager({ courseId, initialLessons, onChanged }) {
       <ConfirmDialog
         open={!!toDelete}
         title="Delete this lesson?"
-        message={`“${toDelete?.title ?? ''}” and its uploaded files will be removed. Students' progress on it is deleted too.`}
+        message={`“${toDelete?.title ?? ''}” and its uploaded files will be removed. Its quiz, students' progress, notes and questions are deleted too.`}
         confirmLabel="Delete lesson"
         danger
         onConfirm={handleDelete}

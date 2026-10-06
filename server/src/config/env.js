@@ -21,4 +21,6 @@ export const env = {
   cookieSameSite: sameSite,
   // browsers require Secure when SameSite=None
   cookieSecure: isProd || sameSite === 'none',
+  // First allowed origin = the website's address (used for the certificate verification link)
+  clientUrl: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',')[0].trim().replace(/\/$/, ''),
 };

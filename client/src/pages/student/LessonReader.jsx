@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../services/api.js';
@@ -7,6 +7,7 @@ import { setLessonBookmark, setLessonComplete } from '../../services/studentServ
 import Alert from '../../components/Alert.jsx';
 import LessonContent from '../../components/student/LessonContent.jsx';
 import LessonList from '../../components/student/LessonList.jsx';
+import StudyTabs from '../../components/student/StudyTabs.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Button, { ButtonLink } from '../../components/ui/Button.jsx';
 import { Card, CardBody } from '../../components/ui/Card.jsx';
@@ -46,6 +47,11 @@ function LessonPane({ courseId, lessonId, position, total, onChanged }) {
   const { data, loading, error, status } = useFetch(`/lessons/${lessonId}`);
   const [local, setLocal] = useState({}); // what the student just changed, shown at once
   const [busy, setBusy] = useState(''); // 'complete' | 'bookmark' | ''
+  const quiz = useFetch(`/lessons/${lessonId}/quiz`); // { quiz: null } when the lesson has no quiz
+  // ?tab=notes|quiz|discussion opens that tab (the "My notes" page links here)
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(() => params.get('tab'));
+  const studyRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -95,6 +101,13 @@ function LessonPane({ courseId, lessonId, position, total, onChanged }) {
   const completed = local.completed ?? data.completed;
   const bookmarked = local.bookmarked ?? data.bookmarked;
   const base = `/student/courses/${courseId}/lessons`;
+  // A required quiz must be passed before the lesson can be completed (the server enforces it too)
+  const quizBlocks = !completed && !!quiz.data?.quiz?.required && !quiz.data.summary.passed;
+
+  function openQuiz() {
+    setTab('quiz');
+    setTimeout(() => studyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
 
   async function toggleComplete() {
     const next = !completed;
@@ -129,6 +142,7 @@ function LessonPane({ courseId, lessonId, position, total, onChanged }) {
   }
 
   return (
+    <>
     <Card>
       <CardBody className="sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
@@ -175,8 +189,9 @@ function LessonPane({ courseId, lessonId, position, total, onChanged }) {
           variant={completed ? 'outline' : 'primary'}
           onClick={toggleComplete}
           loading={busy === 'complete'}
+          disabled={quizBlocks}
           aria-pressed={completed}
-          title={completed ? 'Click to mark as not complete' : undefined}
+          title={completed ? 'Click to mark as not complete' : quizBlocks ? 'Pass the quiz first' : undefined}
           className="order-1 sm:order-2"
         >
           <Icon name="check" className="h-5 w-5" />
@@ -193,7 +208,23 @@ function LessonPane({ courseId, lessonId, position, total, onChanged }) {
           )}
         </div>
       </div>
+
+      {quizBlocks && (
+        <div className="border-t border-brand-100 p-4 sm:px-5">
+          <Alert type="info">
+            This lesson has a required quiz. Pass it to mark the lesson as complete.{' '}
+            <button type="button" onClick={openQuiz} className="font-semibold underline">
+              Open the quiz
+            </button>
+          </Alert>
+        </div>
+      )}
     </Card>
+
+    <div ref={studyRef} className="scroll-mt-20">
+      <StudyTabs lessonId={lessonId} quiz={quiz} active={tab} onChange={setTab} onQuizAttempted={quiz.reload} />
+    </div>
+    </>
   );
 }
 
@@ -257,6 +288,17 @@ export default function LessonReader() {
           {course.title}
         </span>
       </nav>
+
+      {lessons.length > 0 && progress === 100 && (
+        <div className="mb-4">
+          <Alert type="success">
+            You have completed this course. Masha&apos;Allah!{' '}
+            <Link to="/student/certificates" className="font-semibold underline">
+              Get your certificate
+            </Link>
+          </Alert>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-20 lg:self-start">

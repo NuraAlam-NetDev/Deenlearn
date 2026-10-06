@@ -20,11 +20,16 @@ import StudentCourses from './pages/student/StudentCourses.jsx';
 import LessonReader from './pages/student/LessonReader.jsx';
 import Bookmarks from './pages/student/Bookmarks.jsx';
 import Profile from './pages/student/Profile.jsx';
+import Notes from './pages/student/Notes.jsx';
+import Certificates from './pages/student/Certificates.jsx';
+import VerifyCertificate from './pages/VerifyCertificate.jsx';
 import TeacherHome from './pages/teacher/TeacherHome.jsx';
 import MyCourses from './pages/teacher/MyCourses.jsx';
 import CourseForm from './pages/teacher/CourseForm.jsx';
 import CourseManage from './pages/teacher/CourseManage.jsx';
 import LessonEditor from './pages/teacher/LessonEditor.jsx';
+import QuizEditor from './pages/teacher/QuizEditor.jsx';
+import LessonDiscussion from './pages/teacher/LessonDiscussion.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 
 export default function App() {
@@ -36,6 +41,8 @@ export default function App() {
         <Route path="courses" element={<Courses />} />
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="status" element={<Status />} />
+        <Route path="verify" element={<VerifyCertificate />} />
+        <Route path="verify/:code" element={<VerifyCertificate />} />
         {import.meta.env.DEV && <Route path="design" element={<Design />} />}
 
         {/* Only for logged-out users */}
@@ -54,6 +61,8 @@ export default function App() {
           <Route path="courses" element={<StudentCourses />} />
           <Route path="courses/:courseId/lessons/:lessonId" element={<LessonReader />} />
           <Route path="bookmarks" element={<Bookmarks />} />
+          <Route path="notes" element={<Notes />} />
+          <Route path="certificates" element={<Certificates />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -70,6 +79,8 @@ export default function App() {
             <Route path="courses/:id/edit" element={<CourseForm />} />
             <Route path="courses/:courseId/lessons/new" element={<LessonEditor />} />
             <Route path="courses/:courseId/lessons/:lessonId" element={<LessonEditor />} />
+            <Route path="courses/:courseId/lessons/:lessonId/quiz" element={<QuizEditor />} />
+            <Route path="courses/:courseId/lessons/:lessonId/discussion" element={<LessonDiscussion />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>

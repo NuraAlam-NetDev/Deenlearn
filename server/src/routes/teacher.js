@@ -13,8 +13,14 @@ import {
   reorderLessons, addAttachment, removeAttachment,
 } from '../controllers/teacherLessonController.js';
 import {
+  getQuiz as getLessonQuiz, saveQuiz, deleteQuiz, getQuizResults,
+} from '../controllers/teacherQuizController.js';
+import { listCourseQuestions } from '../controllers/discussionController.js';
+import {
   createCourseSchema, updateCourseSchema, teacherListCoursesQuery,
 } from '../validators/course.js';
+import { saveQuizSchema, quizResultsQuery } from '../validators/quiz.js';
+import { courseQuestionsQuery } from '../validators/discussion.js';
 import {
   createLessonSchema, updateLessonSchema, reorderLessonsSchema, teacherListLessonsQuery,
 } from '../validators/lesson.js';
@@ -37,6 +43,9 @@ router.delete('/courses/:id', ownCourse, deleteCourse);
 
 router.get('/courses/:id/stats', ownCourse, getCourseStats);
 
+// Students' questions across the whole course (the teacher's inbox)
+router.get('/courses/:id/questions', ownCourse, validate(courseQuestionsQuery, 'query'), listCourseQuestions);
+
 router.patch('/courses/:id/publish', ownCourse, publishCourse);
 router.patch('/courses/:id/unpublish', ownCourse, unpublishCourse);
 
@@ -52,6 +61,12 @@ router.put('/courses/:courseId/lessons/reorder', ownCourseByCourseId, validate(r
 router.get('/lessons/:id', loadOwnedLesson, getLesson);
 router.patch('/lessons/:id', loadOwnedLesson, validate(updateLessonSchema), updateLesson);
 router.delete('/lessons/:id', loadOwnedLesson, deleteLesson);
+
+// ---- Lesson quiz (one per lesson) ----
+router.get('/lessons/:id/quiz', loadOwnedLesson, getLessonQuiz);
+router.put('/lessons/:id/quiz', loadOwnedLesson, validate(saveQuizSchema), saveQuiz);
+router.delete('/lessons/:id/quiz', loadOwnedLesson, deleteQuiz);
+router.get('/lessons/:id/quiz/results', loadOwnedLesson, validate(quizResultsQuery, 'query'), getQuizResults);
 
 // ---- Lesson files (PDF / image / audio) ----
 router.post('/lessons/:id/attachments', loadOwnedLesson, ...uploadChain, addAttachment);
