@@ -1,3 +1,4 @@
+import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
 import Progress from '../models/Progress.js';
 import Bookmark from '../models/Bookmark.js';
@@ -11,6 +12,7 @@ import { httpError } from '../utils/httpError.js';
 import { pageMeta } from '../utils/pagination.js';
 import { syncCourseProgress } from '../services/courseAccess.js';
 import { uploadFile, deleteAssets } from '../services/media.js';
+import { slugify } from '../utils/slug.js';
 
 const MAX_ATTACHMENTS = 20;
 
@@ -111,7 +113,13 @@ export const addAttachment = asyncHandler(async (req, res) => {
     throw httpError(400, `A lesson can have at most ${MAX_ATTACHMENTS} attachments`);
   }
 
-  const file = await uploadFile(req.file, { folder: `deenlearn/${req.user._id}/lessons` });
+  const course = await Course.findById(lesson.course).select('title').lean();
+  const courseFolder = `${slugify(course?.title)}-${lesson.course}`;
+  const lessonFolder = `${slugify(lesson.title)}-${lesson._id}`;
+
+  const file = await uploadFile(req.file, {
+    folder: `deenlearn/courses/${courseFolder}/lessons/${lessonFolder}`,
+  });
 
   try {
     lesson.attachments.push(file);

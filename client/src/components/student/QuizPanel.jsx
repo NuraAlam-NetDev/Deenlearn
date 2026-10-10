@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../services/api.js';
 import { submitQuizAttempt } from '../../services/studentService.js';
@@ -9,12 +10,12 @@ import Button from '../ui/Button.jsx';
 import Icon from '../ui/Icon.jsx';
 
 // What happened to one option after grading: shown with text AND an icon, never colour alone
-function optionState(option, review) {
+function optionState(option, review, t) {
   const isCorrect = review.correctOptionIds.includes(option._id);
   const picked = review.selected.includes(option._id);
-  if (isCorrect && picked) return { label: 'Your answer · correct', tone: 'good' };
-  if (isCorrect) return { label: 'Correct answer', tone: 'good' };
-  if (picked) return { label: 'Your answer · wrong', tone: 'bad' };
+  if (isCorrect && picked) return { label: t('quiz.correctMine'), tone: 'good' };
+  if (isCorrect) return { label: t('quiz.correct'), tone: 'good' };
+  if (picked) return { label: t('quiz.wrongMine'), tone: 'bad' };
   return null;
 }
 
@@ -25,6 +26,8 @@ const TONE = {
 };
 
 function ReviewQuestion({ index, question, review }) {
+  const { t } = useTranslation();
+
   return (
     <li className="rounded-xl border border-brand-100 bg-white p-4">
       <div className="flex items-start gap-2">
@@ -33,14 +36,14 @@ function ReviewQuestion({ index, question, review }) {
         </span>
         <h3 className="min-w-0 break-words font-semibold text-slate-800" dir="auto">
           {index + 1}. {review.text}
-          <span className="sr-only">{review.correct ? ' (answered correctly)' : ' (answered incorrectly)'}</span>
+          <span className="sr-only">{review.correct ? t('quiz.srCorrect') : t('quiz.srWrong')}</span>
         </h3>
       </div>
 
       {question && (
         <ul className="mt-3 space-y-2">
           {question.options.map((o) => {
-            const state = optionState(o, review);
+            const state = optionState(o, review, t);
             return (
               <li key={o._id} className={`rounded-lg border px-3 py-2 text-sm ${TONE[state?.tone ?? 'none']}`}>
                 <span dir="auto" className="break-words">
@@ -64,7 +67,7 @@ function ReviewQuestion({ index, question, review }) {
 
       {review.explanation && (
         <p className="mt-3 rounded-lg bg-gold-50 px-3 py-2 text-sm text-gold-900" dir="auto">
-          <span className="font-semibold">Why: </span>
+          <span className="font-semibold">{t('quiz.why')}</span>
           {review.explanation}
         </p>
       )}
@@ -73,6 +76,7 @@ function ReviewQuestion({ index, question, review }) {
 }
 
 function Result({ result, quiz, onRetake, onBack }) {
+  const { t } = useTranslation();
   const { attempt, review } = result;
   const byId = new Map(quiz.questions.map((q) => [q._id, q]));
 
@@ -86,15 +90,19 @@ function Result({ result, quiz, onRetake, onBack }) {
       >
         <p className="font-display text-5xl font-bold text-brand-800">{attempt.score}%</p>
         <p className="mt-1 font-semibold text-slate-800">
-          {attempt.passed ? "Passed. Masha'Allah!" : 'Not passed yet'}
+          {attempt.passed ? t('quiz.passed') : t('quiz.notPassed')}
         </p>
         <p className="text-sm text-slate-600">
-          {attempt.correctCount} of {attempt.totalQuestions} correct · you need {attempt.passingScore}% to pass
+          {t('quiz.resultSummary', {
+            correct: attempt.correctCount,
+            total: attempt.totalQuestions,
+            pass: attempt.passingScore,
+          })}
         </p>
-        {!attempt.passed && <p className="mt-2 text-sm text-slate-600">Read the answers below, then try again.</p>}
+        {!attempt.passed && <p className="mt-2 text-sm text-slate-600">{t('quiz.readAnswers')}</p>}
       </div>
 
-      <ol className="space-y-3" aria-label="Answers">
+      <ol className="space-y-3" aria-label={t('quiz.answers')}>
         {review.map((r, i) => (
           <ReviewQuestion key={r.question} index={i} question={byId.get(r.question)} review={r} />
         ))}
@@ -102,10 +110,10 @@ function Result({ result, quiz, onRetake, onBack }) {
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={onRetake} variant={attempt.passed ? 'outline' : 'primary'}>
-          Try again
+          {t('quiz.tryAgain')}
         </Button>
         <Button variant="ghost" onClick={onBack}>
-          Back to quiz summary
+          {t('quiz.backSummary')}
         </Button>
       </div>
     </div>
@@ -113,6 +121,7 @@ function Result({ result, quiz, onRetake, onBack }) {
 }
 
 function Taking({ quiz, lessonId, onCancel, onGraded }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [answers, setAnswers] = useState({}); // questionId -> [optionId]
   const [submitting, setSubmitting] = useState(false);
@@ -149,7 +158,7 @@ function Taking({ quiz, lessonId, onCancel, onGraded }) {
             {i + 1}. {q.text}
           </legend>
           <p className="mb-2 px-1 text-xs text-slate-500">
-            {q.multiple ? 'Select all that apply' : 'Select one answer'}
+            {q.multiple ? t('quiz.selectAll') : t('quiz.selectOne')}
           </p>
           <div className="space-y-2">
             {q.options.map((o) => {
@@ -180,14 +189,14 @@ function Taking({ quiz, lessonId, onCancel, onGraded }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" loading={submitting}>
-          Submit answers
+          {t('quiz.submit')}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={submitting}>
-          Cancel
+          {t('quiz.cancel')}
         </Button>
         {unanswered > 0 && (
           <p className="text-sm text-gold-800" aria-live="polite">
-            {unanswered} question{unanswered === 1 ? '' : 's'} not answered yet. Unanswered questions count as wrong.
+            {t('quiz.unanswered', { count: unanswered })}
           </p>
         )}
       </div>
@@ -198,6 +207,7 @@ function Taking({ quiz, lessonId, onCancel, onGraded }) {
 // info = response of GET /lessons/:id/quiz ({ quiz, attempts, summary })
 // onAttempted() is called after every graded attempt, so the parent can refresh (e.g. unlock "Mark as complete")
 export default function QuizPanel({ lessonId, info, onAttempted }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState('intro'); // 'intro' | 'taking' | 'result'
   const [result, setResult] = useState(null);
   const [taken, setTaken] = useState(null); // the quiz exactly as it was when the student started
@@ -227,14 +237,7 @@ export default function QuizPanel({ lessonId, info, onAttempted }) {
   }
 
   if (mode === 'result' && result) {
-    return (
-      <Result
-        result={result}
-        quiz={taken}
-        onRetake={start}
-        onBack={() => setMode('intro')}
-      />
-    );
+    return <Result result={result} quiz={taken} onRetake={start} onBack={() => setMode('intro')} />;
   }
 
   return (
@@ -244,31 +247,30 @@ export default function QuizPanel({ lessonId, info, onAttempted }) {
           <h3 className="break-words font-display text-xl font-bold text-brand-800" dir="auto">
             {quiz.title}
           </h3>
-          {quiz.required && <Badge tone="gold">Required</Badge>}
-          {summary.passed && <Badge tone="green">Passed</Badge>}
+          {quiz.required && <Badge tone="gold">{t('quiz.required')}</Badge>}
+          {summary.passed && <Badge tone="green">{t('quiz.passedBadge')}</Badge>}
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          {count} question{count === 1 ? '' : 's'} · pass mark {quiz.passingScore}% · retake as many times as you like
+          {t('quiz.meta', { count, pass: quiz.passingScore })}
         </p>
       </div>
 
-      {quiz.required && !summary.passed && (
-        <Alert type="info">You need to pass this quiz before you can mark the lesson as complete.</Alert>
-      )}
+      {quiz.required && !summary.passed && <Alert type="info">{t('quiz.needPass')}</Alert>}
 
       {summary.attempts > 0 && (
         <div className="rounded-xl border border-brand-100 bg-white p-4">
           <p className="text-sm text-slate-700">
-            Best score: <span className="font-bold text-brand-800">{summary.bestScore}%</span> · {summary.attempts}{' '}
-            attempt{summary.attempts === 1 ? '' : 's'}
+            {t('quiz.bestLine', { score: summary.bestScore, count: summary.attempts })}
           </p>
-          <ul className="mt-3 divide-y divide-brand-50 text-sm" aria-label="Your recent attempts">
+          <ul className="mt-3 divide-y divide-brand-50 text-sm" aria-label={t('quiz.recent')}>
             {attempts.map((a) => (
               <li key={a._id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span className="text-slate-600">{formatDateTime(a.createdAt)}</span>
                 <span className="flex items-center gap-2">
                   <span className="font-semibold text-slate-800">{a.score}%</span>
-                  <Badge tone={a.passed ? 'green' : 'gray'}>{a.passed ? 'Passed' : 'Not passed'}</Badge>
+                  <Badge tone={a.passed ? 'green' : 'gray'}>
+                    {a.passed ? t('quiz.passedBadge') : t('quiz.notPassedBadge')}
+                  </Badge>
                 </span>
               </li>
             ))}
@@ -276,7 +278,7 @@ export default function QuizPanel({ lessonId, info, onAttempted }) {
         </div>
       )}
 
-      <Button onClick={start}>{summary.attempts > 0 ? 'Retake quiz' : 'Start quiz'}</Button>
+      <Button onClick={start}>{summary.attempts > 0 ? t('quiz.retake') : t('quiz.start')}</Button>
     </div>
   );
 }

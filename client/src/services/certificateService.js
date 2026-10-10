@@ -6,30 +6,22 @@ const data = (res) => res.data;
 export const claimCertificate = (courseId, recipientName) =>
   api.post(`/courses/${courseId}/certificate`, { recipientName }).then(data);
 
-// Downloads the PDF. The request carries the login cookie, so it cannot be a plain <a href>.
-export async function downloadCertificate(certificate) {
-  let res;
-  try {
-    res = await api.get(`/certificates/${certificate._id}/pdf`, { responseType: 'blob' });
-  } catch (err) {
-    // an error body arrives as a Blob too: turn it back into JSON so getErrorMessage() can read it
-    const blob = err.response?.data;
-    if (blob instanceof Blob) {
-      try {
-        err.response.data = JSON.parse(await blob.text());
-      } catch {
-        err.response.data = {};
-      }
-    }
-    throw err;
-  }
+// Download certificate PDF directly from the backend
+export function downloadCertificate(certificate) {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  const url = URL.createObjectURL(res.data);
+  const url = `${baseUrl}/api/certificates/${certificate._id}/pdf`;
+
+  console.log('DOWNLOAD: direct download starting');
+  console.log('DOWNLOAD URL:', url);
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `Deenlearn-Certificate-${certificate.code}.pdf`;
+
   document.body.appendChild(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+
+  console.log('DOWNLOAD: direct download triggered');
 }

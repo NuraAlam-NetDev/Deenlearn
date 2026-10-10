@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ProgressBar from './ProgressBar.jsx';
 import Icon from './Icon.jsx';
 
@@ -53,6 +54,8 @@ export function CourseCard({
   to,
   badge,
 }) {
+  const { t } = useTranslation();
+
   const heading = to ? (
     <Link to={to} className="after:absolute after:inset-0 hover:text-brand-600">
       {title}
@@ -64,10 +67,13 @@ export function CourseCard({
   const meta = [];
   if (teacher) meta.push(<span key="t" dir="auto">{teacher}</span>);
   if (lessonCount != null) {
-    const noun = `lesson${lessonCount === 1 ? '' : 's'}`;
-    meta.push(completedLessons != null ? `${completedLessons} of ${lessonCount} ${noun} done` : `${lessonCount} ${noun}`);
+    meta.push(
+      completedLessons != null
+        ? t('card.lessonsDone', { done: completedLessons, count: lessonCount })
+        : t('card.lessonsCount', { count: lessonCount })
+    );
   }
-  if (studentCount) meta.push(`${studentCount} learner${studentCount === 1 ? '' : 's'}`);
+  if (studentCount) meta.push(t('card.learners', { count: studentCount }));
 
   return (
     <Card interactive className="relative flex flex-col overflow-hidden">

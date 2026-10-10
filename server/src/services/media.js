@@ -3,12 +3,31 @@ import cloudinary, { cloudinaryConfigured } from '../config/cloudinary.js';
 import { detectFileType } from '../utils/fileType.js';
 import { httpError } from '../utils/httpError.js';
 
-const RESOURCE_TYPE = { image: 'image', pdf: 'raw', audio: 'video' }; // Cloudinary treats audio as "video"
+const RESOURCE_TYPE = { image: 'image', pdf: 'raw', audio: 'video', video: 'video' }; // Cloudinary treats audio and video as "video"
 const KIND_LABEL = {
   image: 'images (JPG, PNG, WEBP, GIF)',
   pdf: 'PDF files',
   audio: 'audio (MP3, WAV, OGG, M4A)',
+  video: 'videos (MP4, WEBM, MOV)',
 };
+
+// Canonical extension for the real detected type (never trust the user's file name for this)
+const EXT_BY_MIME = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+  'audio/ogg': 'ogg',
+  'audio/mp4': 'm4a',
+  'audio/x-m4a': 'm4a',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+};
+const DEFAULT_EXT = { image: 'jpg', pdf: 'pdf', audio: 'mp3', video: 'mp4' };
 
 // multer decodes file names as latin1, which garbles Bengali/Arabic names. Repair if needed.
 function fixFileName(name = 'file') {
@@ -20,6 +39,20 @@ function fixFileName(name = 'file') {
   return fixed.replace(/[\\/\r\n]/g, '_').slice(0, 200) || 'file';
 }
 
+// Keeps letters in any script (Bangla, Arabic, ...), digits, marks, _ and -.
+// Everything else (spaces, slashes, symbols) becomes _, so the public_id is always safe.
+function safeBaseName(fileName) {
+  const dot = fileName.lastIndexOf('.');
+  const base = dot > 0 ? fileName.slice(0, dot) : fileName;
+  return (
+    base
+      .normalize('NFC')
+      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 80) || 'file'
+  );
+}
+
 function uploadBuffer(buffer, options) {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload_stream(options, (err, result) => (err ? reject(err) : resolve(result))).end(buffer);
@@ -27,8 +60,8 @@ function uploadBuffer(buffer, options) {
 }
 
 // Validates the real file type, uploads to Cloudinary, returns attachment-shaped metadata.
-// allow: e.g. ['image'] or ['image', 'pdf', 'audio']
-export async function uploadFile(file, { folder, allow = ['image', 'pdf', 'audio'] }) {
+// allow: e.g. ['image'] or ['image', 'pdf', 'audio', 'video']
+export async function uploadFile(file, { folder, allow = ['image', 'pdf', 'audio', 'video'] }) {
   if (!file) {
     throw httpError(400, 'No file uploaded. Send it as multipart/form-data in the field "file".');
   }
@@ -39,8 +72,13 @@ export async function uploadFile(file, { folder, allow = ['image', 'pdf', 'audio
   }
 
   const resourceType = RESOURCE_TYPE[detected.kind];
-  // Raw files (PDF) keep their extension inside the public_id so the URL ends in .pdf
-  const publicId = crypto.randomUUID() + (detected.kind === 'pdf' ? '.pdf' : '');
+  const ext = EXT_BY_MIME[detected.mime] || DEFAULT_EXT[detected.kind];
+
+  // Readable name + short random suffix, so two uploads of "Lesson 1.pdf" never collide
+  const suffix = crypto.randomBytes(4).toString('hex');
+  const stem = `${safeBaseName(fixFileName(file.originalname))}-${suffix}`;
+  // Raw files (PDF) keep the extension in public_id so the URL ends in .pdf
+  const publicId = resourceType === 'raw' ? `${stem}.${ext}` : stem;
 
   let result;
   try {
@@ -49,6 +87,7 @@ export async function uploadFile(file, { folder, allow = ['image', 'pdf', 'audio
       public_id: publicId,
       resource_type: resourceType,
       overwrite: false,
+      access_mode: 'public', // students must be able to open the file without signed URLs
     });
   } catch (err) {
     console.error('Cloudinary upload failed:', err?.message || err);
@@ -56,7 +95,7 @@ export async function uploadFile(file, { folder, allow = ['image', 'pdf', 'audio
   }
 
   return {
-    name: fixFileName(file.originalname),
+    name: fixFileName(file.originalname), // original name with extension, shown to users
     url: result.secure_url,
     type: detected.mime,
     size: file.size,

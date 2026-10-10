@@ -1,45 +1,52 @@
+import i18n from '../i18n/index.js';
+
 // Same rules as the server (server/src/validators/auth.js), so users get instant feedback.
-// The server still re-checks everything.
+// The server still re-checks everything. Messages follow the selected language.
+const t = (key, options) => i18n.t(key, options);
 const EMAIL = /^\S+@\S+\.\S+$/;
 
-function checkEmail(email) {
-  const value = email.trim();
-  if (!value) return 'Email is required';
-  if (!EMAIL.test(value)) return 'Enter a valid email address';
+function checkName(name) {
+  const clean = name.trim();
+  if (!clean) return t('validation.name.required');
+  if (clean.length < 2) return t('validation.name.min', { n: 2 });
+  if (clean.length > 100) return t('validation.name.max', { n: 100 });
   return '';
 }
 
-// Shared by register and change-password. Returns '' when the password is fine.
-function checkPassword(password) {
-  if (!password) return 'Password is required';
-  if (password.length < 8) return 'Password must be at least 8 characters';
-  if (password.length > 72) return 'Password must be at most 72 characters';
-  if (!/[A-Za-z]/.test(password)) return 'Password must contain a letter (A-Z)';
-  if (!/\d/.test(password)) return 'Password must contain a number';
+function checkEmail(email) {
+  const value = email.trim();
+  if (!value) return t('validation.email.required');
+  if (!EMAIL.test(value)) return t('validation.email.invalid');
+  return '';
+}
+
+// scope: 'password' (register) or 'newPassword' (change password). Returns '' when fine.
+function checkPassword(password, scope = 'password') {
+  if (!password) return t(`validation.${scope}.required`);
+  if (password.length < 8) return t(`validation.${scope}.min`, { n: 8 });
+  if (password.length > 72) return t(`validation.${scope}.max`, { n: 72 });
+  if (!/[A-Za-z]/.test(password)) return t(`validation.${scope}.letter`);
+  if (!/\d/.test(password)) return t(`validation.${scope}.number`);
   return '';
 }
 
 export function validateProfile({ name }) {
   const errors = {};
-  const cleanName = name.trim();
-  if (!cleanName) errors.name = 'Name is required';
-  else if (cleanName.length < 2) errors.name = 'Name must be at least 2 characters';
-  else if (cleanName.length > 100) errors.name = 'Name must be at most 100 characters';
+  const nameError = checkName(name);
+  if (nameError) errors.name = nameError;
   return errors;
 }
 
 export function validatePasswordChange({ currentPassword, newPassword, confirmPassword }) {
   const errors = {};
-  if (!currentPassword) errors.currentPassword = 'Enter your current password';
+  if (!currentPassword) errors.currentPassword = t('validation.currentPassword.required');
 
-  const newError = checkPassword(newPassword);
-  if (newError) errors.newPassword = newError.replace('Password', 'New password');
-  else if (newPassword === currentPassword) {
-    errors.newPassword = 'New password must be different from the current one';
-  }
+  const newError = checkPassword(newPassword, 'newPassword');
+  if (newError) errors.newPassword = newError;
+  else if (newPassword === currentPassword) errors.newPassword = t('validation.newPassword.sameAsCurrent');
 
-  if (!confirmPassword) errors.confirmPassword = 'Repeat the new password';
-  else if (confirmPassword !== newPassword) errors.confirmPassword = 'Passwords do not match';
+  if (!confirmPassword) errors.confirmPassword = t('validation.confirmPassword.required');
+  else if (confirmPassword !== newPassword) errors.confirmPassword = t('validation.confirmPassword.mismatch');
   return errors;
 }
 
@@ -47,23 +54,17 @@ export function validateLogin({ email, password }) {
   const errors = {};
   const emailError = checkEmail(email);
   if (emailError) errors.email = emailError;
-  if (!password) errors.password = 'Password is required';
+  if (!password) errors.password = t('validation.password.required');
   return errors;
 }
 
 export function validateRegister({ name, email, password }) {
   const errors = {};
-
-  const cleanName = name.trim();
-  if (!cleanName) errors.name = 'Name is required';
-  else if (cleanName.length < 2) errors.name = 'Name must be at least 2 characters';
-  else if (cleanName.length > 100) errors.name = 'Name must be at most 100 characters';
-
+  const nameError = checkName(name);
+  if (nameError) errors.name = nameError;
   const emailError = checkEmail(email);
   if (emailError) errors.email = emailError;
-
   const passwordError = checkPassword(password);
   if (passwordError) errors.password = passwordError;
-
   return errors;
 }

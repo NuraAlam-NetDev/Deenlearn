@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useToast } from '../../hooks/useToast.js';
@@ -17,9 +18,9 @@ import { Skeleton } from '../../components/ui/Skeleton.jsx';
 
 const PAGE_SIZE = 8;
 const TABS = [
-  ['', 'All'],
-  ['published', 'Published'],
-  ['draft', 'Drafts'],
+  ['', 'tabAll'],
+  ['published', 'tabPublished'],
+  ['draft', 'tabDrafts'],
 ];
 
 const chip = (active) =>
@@ -30,6 +31,8 @@ const chip = (active) =>
   }`;
 
 function CourseRow({ course, busy, onTogglePublish, onDelete }) {
+  const { t } = useTranslation();
+
   return (
     <Card as="li" className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
       <div className="pattern-star flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-700 text-gold-400">
@@ -47,22 +50,31 @@ function CourseRow({ course, busy, onTogglePublish, onDelete }) {
               {course.title}
             </Link>
           </h2>
-          <Badge tone={course.published ? 'green' : 'gray'}>{course.published ? 'Published' : 'Draft'}</Badge>
+          <Badge tone={course.published ? 'green' : 'gray'}>
+            {course.published ? t('teacher.courses.published') : t('teacher.courses.draft')}
+          </Badge>
         </div>
         <p className="mt-0.5 text-sm text-slate-500">
-          <span className="capitalize">{course.category}</span> · {course.lessonCount} lesson
-          {course.lessonCount === 1 ? '' : 's'} · {course.studentCount} student{course.studentCount === 1 ? '' : 's'}
+          <span className="capitalize">{course.category}</span> ·{' '}
+          {t('teacher.courses.lessonsCount', { count: course.lessonCount })} ·{' '}
+          {t('teacher.courses.studentsCount', { count: course.studentCount })}
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <ButtonLink to={`/teacher/courses/${course._id}`} variant="outline" size="sm">
-          Manage
+          {t('teacher.courses.manage')}
         </ButtonLink>
         <Button variant="ghost" size="sm" loading={busy} onClick={() => onTogglePublish(course)}>
-          {course.published ? 'Unpublish' : 'Publish'}
+          {course.published ? t('teacher.courses.unpublish') : t('teacher.courses.publish')}
         </Button>
-        <Button variant="ghost" size="sm" disabled={busy} onClick={() => onDelete(course)} aria-label={`Delete ${course.title}`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={() => onDelete(course)}
+          aria-label={t('teacher.courses.deleteAria', { title: course.title })}
+        >
           <Icon name="trash" className="h-4 w-4 text-red-600" />
         </Button>
       </div>
@@ -71,6 +83,7 @@ function CourseRow({ course, busy, onTogglePublish, onDelete }) {
 }
 
 export default function MyCourses() {
+  const { t } = useTranslation();
   const toast = useToast();
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -88,7 +101,7 @@ export default function MyCourses() {
     setBusyId(course._id);
     try {
       await setCoursePublished(course._id, !course.published);
-      toast.success(course.published ? 'Course unpublished' : 'Course published');
+      toast.success(course.published ? t('teacher.courses.toastUnpublished') : t('teacher.courses.toastPublished'));
       reload();
     } catch (err) {
       toast.error(getErrorMessage(err)); // e.g. "Add at least one lesson before publishing"
@@ -101,7 +114,7 @@ export default function MyCourses() {
     const course = toDelete;
     try {
       await deleteCourse(course._id);
-      toast.success('Course deleted');
+      toast.success(t('teacher.courses.toastDeleted'));
       if (data.courses.length === 1 && page > 1) setPage(page - 1);
       else reload();
     } catch (err) {
@@ -116,16 +129,16 @@ export default function MyCourses() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold text-brand-800">My courses</h1>
+        <h1 className="text-3xl font-bold text-brand-800">{t('teacher.courses.title')}</h1>
         <ButtonLink to="/teacher/courses/new">
           <Icon name="plus" className="h-4 w-4" />
-          New course
+          {t('teacher.courses.newCourse')}
         </ButtonLink>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Filter by status">
-          {TABS.map(([value, label]) => (
+        <div className="flex gap-2 overflow-x-auto" role="group" aria-label={t('teacher.courses.filterLabel')}>
+          {TABS.map(([value, key]) => (
             <button
               key={value}
               type="button"
@@ -136,7 +149,7 @@ export default function MyCourses() {
                 setPage(1);
               }}
             >
-              {label}
+              {t(`teacher.courses.${key}`)}
             </button>
           ))}
         </div>
@@ -147,8 +160,8 @@ export default function MyCourses() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Search my courses"
-          aria-label="Search my courses"
+          placeholder={t('teacher.courses.searchLabel')}
+          aria-label={t('teacher.courses.searchLabel')}
           dir="auto"
           className="h-10 w-full rounded-lg border border-brand-200 bg-white px-3 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 sm:w-64"
         />
@@ -166,13 +179,13 @@ export default function MyCourses() {
 
       {data && data.courses.length === 0 && (
         <EmptyState
-          title={filtering ? 'No courses match' : 'No courses yet'}
-          text={filtering ? 'Try a different filter or search.' : 'Create your first course to get started.'}
+          title={filtering ? t('teacher.courses.noMatchTitle') : t('teacher.courses.noneTitle')}
+          text={filtering ? t('teacher.courses.noMatchText') : t('teacher.courses.noneText')}
           action={
             !filtering && (
               <ButtonLink to="/teacher/courses/new">
                 <Icon name="plus" className="h-4 w-4" />
-                New course
+                {t('teacher.courses.newCourse')}
               </ButtonLink>
             )
           }
@@ -198,9 +211,9 @@ export default function MyCourses() {
 
       <ConfirmDialog
         open={!!toDelete}
-        title="Delete this course?"
-        message={`“${toDelete?.title ?? ''}” will be deleted with all its lessons, files, enrollments and student progress. This cannot be undone.`}
-        confirmLabel="Delete course"
+        title={t('teacher.courses.deleteTitle')}
+        message={t('teacher.courses.deleteText', { title: toDelete?.title ?? '' })}
+        confirmLabel={t('teacher.courses.deleteConfirm')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setToDelete(null)}

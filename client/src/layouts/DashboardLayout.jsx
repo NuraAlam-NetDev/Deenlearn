@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth.js';
 import { useToast } from '../hooks/useToast.js';
 import Sidebar from '../components/Sidebar.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
-const PORTALS = {
-  student: { label: 'Student portal', badgeTone: 'green' },
-  teacher: { label: 'Teacher portal', badgeTone: 'gold' },
-  admin: { label: 'Admin panel', badgeTone: 'gray' },
+const BADGE_TONES = {
+  student: 'green',
+  teacher: 'gold',
+  admin: 'gray',
 };
 
 // Shared shell for the three portals. See StudentLayout / TeacherLayout / AdminLayout.
 export default function DashboardLayout({ portal, links }) {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const config = PORTALS[portal];
+  const portalLabel = t(`layout.portal.${portal}`);
+  const badgeTone = BADGE_TONES[portal];
 
   // close the drawer after navigating
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function DashboardLayout({ portal, links }) {
   async function handleLogout() {
     navigate('/', { replace: true }); // leave the protected area first
     await logout();
-    toast.info('You have been logged out.');
+    toast.info(t('layout.loggedOut'));
   }
 
   const firstName = user.name?.trim()?.split(/\s+/)[0] ?? '';
@@ -62,8 +65,8 @@ export default function DashboardLayout({ portal, links }) {
         }`}
       >
         <Sidebar
-          portalLabel={config.label}
-          badgeTone={config.badgeTone}
+          portalLabel={portalLabel}
+          badgeTone={badgeTone}
           links={links}
           user={user}
           onLogout={handleLogout}
@@ -76,17 +79,17 @@ export default function DashboardLayout({ portal, links }) {
           <button
             type="button"
             onClick={() => setDrawer(true)}
-            aria-label="Open menu"
+            aria-label={t('layout.openMenu')}
             aria-expanded={drawer}
             className="-ms-2 rounded-lg p-2 text-brand-700 hover:bg-brand-50 lg:hidden"
           >
             <Icon name="menu" className="h-6 w-6" />
           </button>
-          <p className="min-w-0 flex-1 truncate text-sm text-slate-600">
-            Assalamu alaikum, <span className="font-semibold text-brand-800" dir="auto">{firstName}</span>
+          <p className="min-w-0 flex-1 truncate text-sm text-slate-600" dir="auto">
+            {t('layout.greeting', { name: firstName })}
           </p>
           <Link to="/" className="shrink-0 text-sm font-medium text-brand-700 hover:text-brand-600">
-            Website
+            {t('layout.website')}
           </Link>
         </header>
 

@@ -1,0 +1,14 @@
+{
+  "coursePrice": {
+    "title": "价格",
+    "hint": "为每种货币设置价格。0 表示该货币下免费。",
+    "bdtLabel": "BDT 价格（bKash、Nagad、银行卡）",
+    "usdLabel": "USD 价格（国际银行卡）",
+    "bdtHint": "整数，例如 500",
+    "usdHint": "整数，例如 5",
+    "invalid": "请输入 0 或更大的整数",
+    "tooHighBDT": "BDT 价格最高为 1,000,000",
+    "tooHighUSD": "USD 价格最高为 10,000",
+    "note": "学员报名前，付款需经管理员审核通过。"
+  }
+}

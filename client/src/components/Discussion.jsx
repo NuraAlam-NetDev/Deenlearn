@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth.js';
 import { useFetch } from '../hooks/useFetch.js';
 import { useToast } from '../hooks/useToast.js';
@@ -23,7 +24,10 @@ import { Skeleton } from './ui/Skeleton.jsx';
 import TextAreaField from './ui/TextAreaField.jsx';
 
 const PAGE_SIZE = 10;
-const ROLE_BADGE = { teacher: { tone: 'gold', label: 'Teacher' }, admin: { tone: 'gray', label: 'Admin' } };
+const ROLE_BADGE = {
+  teacher: { tone: 'gold', key: 'qa.roleTeacher' },
+  admin: { tone: 'gray', key: 'qa.roleAdmin' },
+};
 
 const chip = (active) =>
   `shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
@@ -33,13 +37,14 @@ const chip = (active) =>
   }`;
 
 function Byline({ author, date }) {
+  const { t } = useTranslation();
   const badge = ROLE_BADGE[author?.role];
   return (
     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
       <span className="font-semibold text-slate-700" dir="auto">
-        {author?.name ?? 'Deleted user'}
+        {author?.name ?? t('qa.deletedUser')}
       </span>
-      {badge && <Badge tone={badge.tone}>{badge.label}</Badge>}
+      {badge && <Badge tone={badge.tone}>{t(badge.key)}</Badge>}
       <span>{formatDateTime(date)}</span>
     </p>
   );
@@ -47,6 +52,7 @@ function Byline({ author, date }) {
 
 // ---------- ask a new question ----------
 function AskForm({ lessonId, onPosted, onCancel }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -56,13 +62,13 @@ function AskForm({ lessonId, onPosted, onCancel }) {
   async function submit(e) {
     e.preventDefault();
     if (title.trim().length < 3) {
-      setErrors({ title: 'Write a short title (at least 3 characters)' });
+      setErrors({ title: t('qa.titleTooShort') });
       return;
     }
     setBusy(true);
     try {
       await askQuestion(lessonId, { title: title.trim(), body: body.trim() });
-      toast.success('Your question was posted.');
+      toast.success(t('qa.posted'));
       onPosted();
     } catch (err) {
       const fields = getFieldErrors(err);
@@ -75,12 +81,12 @@ function AskForm({ lessonId, onPosted, onCancel }) {
   return (
     <form onSubmit={submit} noValidate className="space-y-3 rounded-xl border border-brand-200 bg-brand-50/50 p-4">
       <FormField
-        label="Your question"
+        label={t('qa.yourQuestion')}
         name="title"
         value={title}
         maxLength={150}
         error={errors.title}
-        placeholder="e.g. What is the difference between these two rulings?"
+        placeholder={t('qa.titlePlaceholder')}
         onChange={(e) => {
           setTitle(e.target.value);
           setErrors({});
@@ -88,7 +94,7 @@ function AskForm({ lessonId, onPosted, onCancel }) {
         autoFocus
       />
       <TextAreaField
-        label="Details (optional)"
+        label={t('qa.details')}
         name="body"
         rows={4}
         value={body}
@@ -98,10 +104,10 @@ function AskForm({ lessonId, onPosted, onCancel }) {
       />
       <div className="flex flex-wrap gap-2">
         <Button type="submit" loading={busy}>
-          Post question
+          {t('qa.postQuestion')}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          {t('quiz.cancel')}
         </Button>
       </div>
     </form>
@@ -110,6 +116,7 @@ function AskForm({ lessonId, onPosted, onCancel }) {
 
 // ---------- one open question with its replies ----------
 function Thread({ questionId, me, onChanged, onDeleted }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const { data, loading, error, reload } = useFetch(`/questions/${questionId}`);
   const [body, setBody] = useState('');
@@ -118,7 +125,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
   const [confirm, setConfirm] = useState(null); // { kind: 'question' | 'reply', id }
 
   if (loading && !data) return <Skeleton className="h-24 w-full" />;
-  if (error || !data) return <Alert>{error || 'Could not load this question.'}</Alert>;
+  if (error || !data) return <Alert>{error || t('qa.loadError')}</Alert>;
 
   const { question, replies, canModerate } = data;
   const mine = (author) => String(author?._id) === String(me._id);
@@ -158,11 +165,11 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
     try {
       if (target.kind === 'question') {
         await removeQuestion(target.id);
-        toast.info('Question deleted.');
+        toast.info(t('qa.questionDeleted'));
         onDeleted();
       } else {
         await removeReply(target.id);
-        toast.info('Reply deleted.');
+        toast.info(t('qa.replyDeleted'));
         reload();
         onChanged();
       }
@@ -181,7 +188,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
             {question.body}
           </p>
         ) : (
-          <p className="text-sm text-slate-500">No further details.</p>
+          <p className="text-sm text-slate-500">{t('qa.noDetails')}</p>
         )}
         {(mine(question.author) || canModerate) && (
           <button
@@ -190,14 +197,14 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
             className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
           >
             <Icon name="trash" className="h-3.5 w-3.5" />
-            Delete question
+            {t('qa.deleteQuestion')}
           </button>
         )}
       </div>
 
       <div>
         <h4 className="mb-2 text-sm font-semibold text-slate-700">
-          {replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
+          {t('qa.replies', { count: replies.length })}
         </h4>
         {replies.length > 0 && (
           <ul className="space-y-3">
@@ -211,7 +218,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
                   {r.accepted && (
                     <Badge tone="green">
                       <Icon name="tick" className="me-1 h-3 w-3" />
-                      Answer
+                      {t('qa.answerBadge')}
                     </Badge>
                   )}
                 </div>
@@ -226,7 +233,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
                       onClick={() => toggleAnswer(r)}
                       className="text-brand-700 hover:underline disabled:opacity-60"
                     >
-                      {r.accepted ? 'Unmark as answer' : 'Mark as answer'}
+                      {r.accepted ? t('qa.unmark') : t('qa.markAnswer')}
                     </button>
                   )}
                   {(mine(r.author) || canModerate) && (
@@ -235,7 +242,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
                       onClick={() => setConfirm({ kind: 'reply', id: r._id })}
                       className="text-red-600 hover:underline"
                     >
-                      Delete
+                      {t('qa.delete')}
                     </button>
                   )}
                 </div>
@@ -247,26 +254,22 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
 
       <form onSubmit={sendReply} className="space-y-2">
         <TextAreaField
-          label="Your reply"
+          label={t('qa.yourReply')}
           rows={3}
           value={body}
           maxLength={3000}
           onChange={(e) => setBody(e.target.value)}
         />
         <Button type="submit" size="sm" loading={posting} disabled={!body.trim()}>
-          Post reply
+          {t('qa.postReply')}
         </Button>
       </form>
 
       <ConfirmDialog
         open={!!confirm}
-        title={confirm?.kind === 'question' ? 'Delete this question?' : 'Delete this reply?'}
-        message={
-          confirm?.kind === 'question'
-            ? 'The question and all its replies will be removed. This cannot be undone.'
-            : 'This reply will be removed. This cannot be undone.'
-        }
-        confirmLabel="Delete"
+        title={confirm?.kind === 'question' ? t('qa.deleteQuestionTitle') : t('qa.deleteReplyTitle')}
+        message={confirm?.kind === 'question' ? t('qa.deleteQuestionText') : t('qa.deleteReplyText')}
+        confirmLabel={t('qa.deleteConfirm')}
         danger
         onConfirm={confirmDelete}
         onCancel={() => setConfirm(null)}
@@ -279,6 +282,7 @@ function Thread({ questionId, me, onChanged, onDeleted }) {
 // lesson discussion page; the server decides who may take part (enrolled students, the course's
 // teacher, admins) and who may delete what.
 export default function Discussion({ lessonId }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [status, setStatus] = useState('all'); // 'all' | 'unanswered'
   const [page, setPage] = useState(1);
@@ -297,9 +301,14 @@ export default function Discussion({ lessonId }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter questions">
-          <button type="button" className={chip(status === 'all')} aria-pressed={status === 'all'} onClick={() => changeStatus('all')}>
-            All questions
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('qa.filterLabel')}>
+          <button
+            type="button"
+            className={chip(status === 'all')}
+            aria-pressed={status === 'all'}
+            onClick={() => changeStatus('all')}
+          >
+            {t('qa.allQuestions')}
           </button>
           <button
             type="button"
@@ -307,13 +316,13 @@ export default function Discussion({ lessonId }) {
             aria-pressed={status === 'unanswered'}
             onClick={() => changeStatus('unanswered')}
           >
-            Unanswered
+            {t('qa.unanswered')}
           </button>
         </div>
         {!asking && (
           <Button size="sm" onClick={() => setAsking(true)}>
             <Icon name="plus" className="h-4 w-4" />
-            Ask a question
+            {t('qa.askQuestion')}
           </Button>
         )}
       </div>
@@ -335,12 +344,8 @@ export default function Discussion({ lessonId }) {
 
       {data && data.questions.length === 0 && (
         <EmptyState
-          title={status === 'unanswered' ? 'No unanswered questions' : 'No questions yet'}
-          text={
-            status === 'unanswered'
-              ? 'Every question here has an answer.'
-              : 'Not clear about something in this lesson? Ask here, and your teacher or classmates can help.'
-          }
+          title={status === 'unanswered' ? t('qa.noUnansweredTitle') : t('qa.noQuestionsTitle')}
+          text={status === 'unanswered' ? t('qa.noUnansweredText') : t('qa.noQuestionsText')}
         />
       )}
 
@@ -366,11 +371,11 @@ export default function Discussion({ lessonId }) {
                     <Byline author={q.author} date={q.createdAt} />
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-slate-500">
-                    {q.answered && <Badge tone="green">Answered</Badge>}
+                    {q.answered && <Badge tone="green">{t('qa.answered')}</Badge>}
                     <span className="inline-flex items-center gap-1">
                       <Icon name="message" className="h-3.5 w-3.5" />
                       {q.replyCount}
-                      <span className="sr-only"> replies</span>
+                      <span className="sr-only">{t('qa.srReplies')}</span>
                     </span>
                   </span>
                 </button>

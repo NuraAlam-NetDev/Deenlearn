@@ -7,8 +7,14 @@ export default defineConfig({
   server: {
     port: 5173,
     // Proxy /api to the Express server so dev needs no URL juggling
-    proxy: {
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
-    },
+   proxy: {
+  '/api': {
+    target: 'http://localhost:5000',
+    changeOrigin: true,
+    secure: false,
+    timeout: 30000,
+    proxyTimeout: 30000,
+  },
+},
   },
 });

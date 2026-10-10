@@ -18,8 +18,11 @@ async function findUserOr404(id) {
 }
 
 // GET /api/admin/stats
-export const getStats = asyncHandler(async (_req, res) => {
+export const getStats = asyncHandler(async (req, res) => {
   const since = new Date(Date.now() - 7 * DAY);
+  const isSuper = req.user.role === 'super_admin';
+  // Normal admins never see super admin accounts, not even in the numbers
+  const userScope = isSuper ? {} : { role: { $ne: 'super_admin' } };
 
   const [
     roleRows, banned, pendingTeachers, newUsers,
@@ -27,10 +30,10 @@ export const getStats = asyncHandler(async (_req, res) => {
     lessonTotal,
     enrollTotal, enrollCompleted, newEnrollments,
   ] = await Promise.all([
-    User.aggregate([{ $group: { _id: '$role', n: { $sum: 1 } } }]),
-    User.countDocuments({ status: 'banned' }),
-    User.countDocuments({ role: 'teacher', approvalStatus: 'pending' }),
-    User.countDocuments({ createdAt: { $gte: since } }),
+    User.aggregate([{ $match: userScope }, { $group: { _id: '$role', n: { $sum: 1 } } }]),
+    User.countDocuments({ ...userScope, status: 'banned' }),
+    User.countDocuments({ ...userScope, role: 'teacher', approvalStatus: 'pending' }),
+    User.countDocuments({ ...userScope, createdAt: { $gte: since } }),
     Course.countDocuments(),
     Course.countDocuments({ published: true }),
     Lesson.countDocuments(),
@@ -50,6 +53,8 @@ export const getStats = asyncHandler(async (_req, res) => {
       banned,
       pendingTeachers,
       newLast7Days: newUsers,
+      // Only the super admin sees how many super admins exist
+      ...(isSuper && { superAdmins: roles.super_admin ?? 0 }),
     },
     courses: {
       total: courseTotal,
@@ -70,7 +75,12 @@ export const listUsers = asyncHandler(async (req, res) => {
   const { page, limit, role, status, approval, q } = req.query;
 
   const filter = {};
-  if (role) filter.role = role;
+  if (req.user.role === 'super_admin') {
+    if (role) filter.role = role;
+  } else {
+    // Normal admins only see students and teachers
+    filter.role = role && ['student', 'teacher'].includes(role) ? role : { $in: ['student', 'teacher'] };
+  }
   if (status === 'banned') filter.status = 'banned';
   if (status === 'active') filter.status = { $ne: 'banned' }; // accounts created before this field count as active
   if (approval === 'pending' || approval === 'rejected') filter.approvalStatus = approval;
@@ -187,4 +197,22 @@ export const deleteCourse = asyncHandler(async (req, res) => {
 
   await deleteCourseCascade(course);
   res.json({ message: 'Course removed' });
+});
+// PATCH /api/admin/courses/:id/visibility   body: { published: true | false }
+// Admin can hide a course from the catalogue or show it again. Admin cannot create courses.
+export const setCourseVisibility = asyncHandler(async (req, res) => {
+  const { published } = req.body;
+  if (typeof published !== 'boolean') throw httpError(400, 'published must be true or false');
+
+  const course = await Course.findById(req.params.id);
+  if (!course) throw httpError(404, 'Course not found');
+
+  if (published) {
+    const lessonCount = await Lesson.countDocuments({ course: course._id });
+    if (!lessonCount) throw httpError(400, 'This course has no lessons yet');
+  }
+
+  course.published = published;
+  await course.save();
+  res.json({ course });
 });

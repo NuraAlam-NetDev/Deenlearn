@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth.js';
 import { useFetch } from '../hooks/useFetch.js';
 import { useToast } from '../hooks/useToast.js';
@@ -17,6 +18,7 @@ import { homeFor } from '../utils/roles.js';
 
 // The box next to the course: what the visitor can do depends on who they are
 function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, enrolling, onEnroll, location }) {
+  const { t } = useTranslation();
   let body;
 
   if (authLoading) {
@@ -24,50 +26,51 @@ function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, en
   } else if (!user) {
     body = (
       <>
-        <p className="text-sm text-slate-600">Login or create an account to join this course.</p>
+        <p className="text-sm text-slate-600">{t('courseDetail.loginPrompt')}</p>
         <ButtonLink to="/login" state={{ from: location }} full size="lg">
-          Login to enroll
+          {t('courseDetail.loginToEnroll')}
         </ButtonLink>
         <ButtonLink to="/register" state={{ from: location }} variant="outline" full>
-          Create an account
+          {t('courseDetail.createAccount')}
         </ButtonLink>
       </>
     );
   } else if (enrollment) {
     body = (
       <>
-        <p className="font-semibold text-brand-800">You are enrolled</p>
+        <p className="font-semibold text-brand-800">{t('courseDetail.enrolled')}</p>
         <ProgressBar value={enrollment.progress} />
         <p className="text-sm text-slate-600">
-          {enrollment.completedLessons} of {enrollment.totalLessons} lessons completed
+          {t('courseDetail.progressDone', {
+            done: enrollment.completedLessons,
+            total: enrollment.totalLessons,
+          })}
         </p>
         <ButtonLink to={homeFor(user.role)} full size="lg">
-          Go to my dashboard
+          {t('courseDetail.goDashboard')}
         </ButtonLink>
       </>
     );
   } else if (canManage) {
     body = (
       <>
-        <Alert type="info">This is your course. Students see it like this.</Alert>
+        <Alert type="info">{t('courseDetail.ownCourse')}</Alert>
         <ButtonLink to="/teacher/courses" variant="outline" full>
-          Manage my courses
+          {t('courseDetail.manageCourses')}
         </ButtonLink>
       </>
     );
   } else if (user.role === 'student') {
     body = (
       <>
-        <p className="text-sm text-slate-600">
-          Join to unlock all {lessonCount} lesson{lessonCount === 1 ? '' : 's'} and track your progress.
-        </p>
+        <p className="text-sm text-slate-600">{t('courseDetail.joinPrompt', { n: lessonCount })}</p>
         <Button full size="lg" loading={enrolling} onClick={onEnroll}>
-          Enroll now
+          {t('courseDetail.enrollNow')}
         </Button>
       </>
     );
   } else {
-    body = <Alert type="info">Only student accounts can enroll in courses.</Alert>;
+    body = <Alert type="info">{t('courseDetail.studentsOnly')}</Alert>;
   }
 
   return (
@@ -78,6 +81,7 @@ function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, en
 }
 
 export default function CourseDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const location = useLocation();
   const toast = useToast();
@@ -89,11 +93,11 @@ export default function CourseDetail() {
     setEnrolling(true);
     try {
       await api.post(`/courses/${id}/enroll`);
-      toast.success('You are enrolled in this course.');
+      toast.success(t('courseDetail.enrolledToast'));
       reload();
     } catch (err) {
       if (err.response?.status === 409) {
-        toast.info('You are already enrolled.');
+        toast.info(t('courseDetail.alreadyEnrolled'));
         reload();
       } else {
         toast.error(getErrorMessage(err));
@@ -109,7 +113,7 @@ export default function CourseDetail() {
       className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-600"
     >
       <Icon name="chevron-left" className="h-4 w-4" />
-      All courses
+      {t('courseDetail.allCourses')}
     </Link>
   );
 
@@ -129,9 +133,9 @@ export default function CourseDetail() {
       <div>
         {back}
         <EmptyState
-          title="Course not found"
-          text="This course does not exist, or it is not published."
-          action={<ButtonLink to="/courses">Browse courses</ButtonLink>}
+          title={t('courseDetail.notFoundTitle')}
+          text={t('courseDetail.notFoundText')}
+          action={<ButtonLink to="/courses">{t('courseDetail.browse')}</ButtonLink>}
         />
       </div>
     );
@@ -141,7 +145,7 @@ export default function CourseDetail() {
     return (
       <div>
         {back}
-        <Alert>{error || 'Could not load this course.'}</Alert>
+        <Alert>{error || t('courseDetail.loadError')}</Alert>
       </div>
     );
   }
@@ -183,7 +187,7 @@ export default function CourseDetail() {
                 <Badge tone="gold" className="capitalize">
                   {course.category}
                 </Badge>
-                {!course.published && <Badge tone="gray">Draft: only you can see this</Badge>}
+                {!course.published && <Badge tone="gray">{t('courseDetail.draft')}</Badge>}
               </div>
               <h1 className="break-words text-3xl font-bold text-brand-800 sm:text-4xl" dir="auto">
                 {course.title}
@@ -197,27 +201,27 @@ export default function CourseDetail() {
                 )}
                 <span className="inline-flex items-center gap-1.5">
                   <Icon name="book" className="h-4 w-4" />
-                  {lessons.length} lesson{lessons.length === 1 ? '' : 's'}
+                  {t('courseDetail.lessonsLabel', { n: lessons.length })}
                 </span>
               </p>
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title="About this course" />
+            <CardHeader title={t('courseDetail.aboutTitle')} />
             <CardBody>
-              <TextBlock text={course.description || 'The teacher has not added a description yet.'} />
+              <TextBlock text={course.description || t('courseDetail.noDescription')} />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader
-              title="Course content"
-              subtitle={`${lessons.length} lesson${lessons.length === 1 ? '' : 's'}`}
+              title={t('courseDetail.contentTitle')}
+              subtitle={t('courseDetail.lessonsLabel', { n: lessons.length })}
             />
             {lessons.length === 0 ? (
               <CardBody>
-                <p className="text-sm text-slate-500">No lessons have been added yet.</p>
+                <p className="text-sm text-slate-500">{t('courseDetail.noLessons')}</p>
               </CardBody>
             ) : (
               <ol className="divide-y divide-brand-50">

@@ -1,9 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import Icon from '../ui/Icon.jsx';
 import { formatBytes } from '../../utils/format.js';
 import { isHttpUrl, toEmbedUrl } from '../../utils/media.js';
 import { toHtml } from '../../utils/richText.js';
 
+// Teacher's YouTube / Vimeo link
 function Video({ url }) {
+  const { t } = useTranslation();
   const embed = toEmbedUrl(url);
 
   if (embed) {
@@ -11,7 +14,7 @@ function Video({ url }) {
       <div className="aspect-video overflow-hidden rounded-xl bg-brand-950">
         <iframe
           src={embed}
-          title="Lesson video"
+          title={t('reader.content.videoTitle')}
           className="h-full w-full"
           loading="lazy"
           allow="encrypted-media; picture-in-picture; fullscreen"
@@ -32,7 +35,7 @@ function Video({ url }) {
       className="flex items-center gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 font-medium text-brand-800 hover:bg-brand-100"
     >
       <Icon name="play" className="h-5 w-5 shrink-0" />
-      <span className="min-w-0 flex-1">Watch the lesson video</span>
+      <span className="min-w-0 flex-1">{t('reader.content.watchVideo')}</span>
       <Icon name="external" className="h-4 w-4 shrink-0" />
     </a>
   );
@@ -41,13 +44,14 @@ function Video({ url }) {
 function Attachment({ file }) {
   if (!isHttpUrl(file.url)) return null;
 
-  if (file.kind === 'audio') {
+  // Uploaded video: plays inside the lesson page
+  if (file.kind === 'video') {
     return (
       <li className="rounded-lg border border-brand-100 p-3">
         <p className="mb-2 break-words text-sm font-medium text-slate-700" dir="auto">
           {file.name}
         </p>
-        <audio controls preload="none" src={file.url} className="w-full" />
+        <video controls preload="metadata" src={file.url} className="w-full rounded-lg bg-black" />
       </li>
     );
   }
@@ -70,6 +74,7 @@ function Attachment({ file }) {
     );
   }
 
+  // PDF, MP3 and other files: click the link and it opens automatically in a new tab
   return (
     <li>
       <a
@@ -93,6 +98,7 @@ function Attachment({ file }) {
 // lesson.content is HTML that the server sanitizes (when saved, and again when a lesson is read),
 // so it is safe to render. Plain-text lessons from before the editor are converted by toHtml().
 export default function LessonContent({ lesson }) {
+  const { t } = useTranslation();
   const html = toHtml(lesson.content);
   const attachments = lesson.attachments ?? [];
   const sorted = [...attachments.filter((a) => a.kind !== 'image'), ...attachments.filter((a) => a.kind === 'image')];
@@ -105,14 +111,14 @@ export default function LessonContent({ lesson }) {
         <div className="rich-content" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
         !lesson.videoUrl &&
-        attachments.length === 0 && <p className="text-slate-500">This lesson has no content yet.</p>
+        attachments.length === 0 && <p className="text-slate-500">{t('reader.content.noContent')}</p>
       )}
 
       {sorted.length > 0 && (
         <section aria-labelledby="lesson-files">
           <h2 id="lesson-files" className="mb-3 flex items-center gap-2 text-xl font-bold text-brand-800">
             <Icon name="paperclip" className="h-5 w-5" />
-            Files
+            {t('reader.content.files')}
           </h2>
           <ul className="space-y-2">
             {sorted.map((file) => (

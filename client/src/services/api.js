@@ -3,10 +3,9 @@ import axios from 'axios';
 // In dev, leave VITE_API_URL empty: Vite proxies /api to the Express server,
 // so cookies are same-origin. In production set it to the API's URL.
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL || ''}/api`,
-  withCredentials: true, // send/receive the httpOnly auth cookies
+  baseURL: 'http://localhost:5000/api',
+  withCredentials: true,
 });
-
 // AuthContext registers a callback here so a dead session logs the user out of the UI
 let onSessionExpired = () => {};
 export const setSessionExpiredHandler = (fn) => {

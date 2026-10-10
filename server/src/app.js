@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import routes from './routes/index.js';
 import { apiLimiter } from './middleware/rateLimiters.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import { stripeWebhook } from './controllers/paymentController.js';
 
 const app = express();
 
@@ -27,6 +28,10 @@ app.use(
     credentials: true, // needed so the browser sends/accepts auth cookies
   })
 );
+
+// Stripe signs the EXACT bytes it sent, so this route must read the raw body.
+// It is mounted before express.json, which would otherwise parse (and change) the body.
+app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
 // Most bodies are tiny (32kb leaves room for long Bengali/Arabic text, 3 bytes per character).
 // Rich-text lessons and quizzes (up to 40 questions) can be large, so only those get the bigger limit.

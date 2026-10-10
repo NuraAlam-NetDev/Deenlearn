@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useToast } from '../../hooks/useToast.js';
@@ -17,6 +18,7 @@ import { Skeleton } from '../../components/ui/Skeleton.jsx';
 
 // A finished course with no certificate yet: choose the name, then claim it
 function ClaimCard({ item, defaultName, onClaimed }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [name, setName] = useState(defaultName);
   const [error, setError] = useState('');
@@ -28,7 +30,7 @@ function ClaimCard({ item, defaultName, onClaimed }) {
     setError('');
     try {
       await claimCertificate(item.courseId, name.trim());
-      toast.success('Your certificate is ready.');
+      toast.success(t('student.certificates.readyToast'));
       onClaimed();
     } catch (err) {
       setError(getFieldErrors(err).recipientName || getErrorMessage(err));
@@ -40,29 +42,29 @@ function ClaimCard({ item, defaultName, onClaimed }) {
     <Card className="p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="break-words text-lg font-bold text-brand-800" dir="auto">{item.courseTitle}</h3>
-        <Badge tone="green">Course completed</Badge>
+        <Badge tone="green">{t('student.certificates.courseCompleted')}</Badge>
       </div>
 
       {item.eligible ? (
         <form onSubmit={submit} noValidate className="mt-3 space-y-3">
           <FormField
-            label="Name to print on the certificate"
+            label={t('student.certificates.nameLabel')}
             name="recipientName"
             value={name}
             maxLength={80}
             error={error}
-            hint="Use English letters. You cannot change it after the certificate is issued."
+            hint={t('student.certificates.nameHint')}
             onChange={(e) => { setName(e.target.value); setError(''); }}
           />
           <Button type="submit" loading={busy} disabled={!name.trim()}>
             <Icon name="award" className="h-4 w-4" />
-            Get my certificate
+            {t('student.certificates.getCertificate')}
           </Button>
         </form>
       ) : (
         <div className="mt-3">
           <Alert type="info">
-            Pass the required quiz{item.pendingQuizzes.length === 1 ? '' : 'zes'} to unlock this certificate:
+            {t('student.certificates.pendingQuiz', { count: item.pendingQuizzes.length })}
             <ul className="mt-1 list-disc ps-5">
               {item.pendingQuizzes.map((q) => (
                 <li key={q.lessonId} dir="auto">
@@ -80,6 +82,7 @@ function ClaimCard({ item, defaultName, onClaimed }) {
 }
 
 function IssuedCard({ certificate }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -102,12 +105,13 @@ function IssuedCard({ certificate }) {
       <div className="min-w-0 flex-1">
         <h3 className="break-words text-lg font-bold leading-snug text-brand-800" dir="auto">{certificate.courseTitle}</h3>
         <p className="text-sm text-slate-500">
-          Issued {formatDate(certificate.issuedAt)} · <span className="ltr-isolate font-mono">{certificate.code}</span>
+          {t('student.certificates.issued', { date: formatDate(certificate.issuedAt) })} ·{' '}
+          <span className="ltr-isolate font-mono">{certificate.code}</span>
         </p>
       </div>
       <Button onClick={download} loading={busy} variant="outline">
         <Icon name="download" className="h-4 w-4" />
-        Download PDF
+        {t('student.certificates.downloadPdf')}
       </Button>
     </Card>
   );
@@ -115,20 +119,23 @@ function IssuedCard({ certificate }) {
 
 // /student/certificates
 export default function Certificates() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data, loading, error, reload } = useFetch('/certificates/mine');
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-800">Certificates</h1>
-      <p className="mt-1 text-slate-600">Finish every lesson of a course to earn a PDF certificate.</p>
+      <h1 className="text-3xl font-bold text-brand-800">{t('student.certificates.title')}</h1>
+      <p className="mt-1 text-slate-600">{t('student.certificates.subtitle')}</p>
 
       {error && <div className="mt-5"><Alert>{error}</Alert></div>}
       {loading && !data && <Skeleton className="mt-5 h-28 w-full" />}
 
       {data && data.claimable.length > 0 && (
         <section className="mt-6 space-y-3" aria-labelledby="ready-heading">
-          <h2 id="ready-heading" className="text-2xl font-bold text-brand-800">Ready to claim</h2>
+          <h2 id="ready-heading" className="text-2xl font-bold text-brand-800">
+            {t('student.certificates.readyHeading')}
+          </h2>
           {data.claimable.map((item) => (
             <ClaimCard key={item.courseId} item={item} defaultName={user.name} onClaimed={reload} />
           ))}
@@ -137,7 +144,9 @@ export default function Certificates() {
 
       {data && data.certificates.length > 0 && (
         <section className="mt-6" aria-labelledby="issued-heading">
-          <h2 id="issued-heading" className="mb-3 text-2xl font-bold text-brand-800">Your certificates</h2>
+          <h2 id="issued-heading" className="mb-3 text-2xl font-bold text-brand-800">
+            {t('student.certificates.issuedHeading')}
+          </h2>
           <ul className="space-y-3">
             {data.certificates.map((c) => <IssuedCard key={c._id} certificate={c} />)}
           </ul>
@@ -147,9 +156,9 @@ export default function Certificates() {
       {data && data.certificates.length === 0 && data.claimable.length === 0 && (
         <div className="mt-6">
           <EmptyState
-            title="No certificates yet"
-            text="Complete all the lessons of a course (and pass its required quizzes) and your certificate will appear here."
-            action={<ButtonLink to="/student/courses">Continue learning</ButtonLink>}
+            title={t('student.certificates.emptyTitle')}
+            text={t('student.certificates.emptyText')}
+            action={<ButtonLink to="/student/courses">{t('student.certificates.continueLearning')}</ButtonLink>}
           />
         </div>
       )}

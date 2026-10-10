@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth.js';
 import { useForm } from '../hooks/useForm.js';
 import { getErrorMessage, getFieldErrors } from '../services/api.js';
@@ -10,6 +11,7 @@ import Button from '../components/ui/Button.jsx';
 import { Card, CardBody } from '../components/ui/Card.jsx';
 
 export default function Login() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,12 +37,12 @@ export default function Login() {
   return (
     <Card className="mx-auto max-w-md">
       <CardBody className="sm:p-8">
-        <h1 className="mb-1 text-3xl font-bold text-brand-800">Welcome back</h1>
-        <p className="mb-5 text-sm text-slate-500">Login to continue learning.</p>
+        <h1 className="mb-1 text-3xl font-bold text-brand-800">{t('auth.loginTitle')}</h1>
+        <p className="mb-5 text-sm text-slate-500">{t('auth.loginSubtitle')}</p>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           {formError && <Alert>{formError}</Alert>}
           <FormField
-            label="Email"
+            label={t('auth.email')}
             name="email"
             type="email"
             autoComplete="email"
@@ -50,7 +52,7 @@ export default function Login() {
             error={errors.email}
           />
           <FormField
-            label="Password"
+            label={t('auth.password')}
             name="password"
             type="password"
             autoComplete="current-password"
@@ -60,13 +62,13 @@ export default function Login() {
             error={errors.password}
           />
           <Button type="submit" full loading={submitting}>
-            {submitting ? 'Logging in…' : 'Login'}
+            {submitting ? t('auth.loggingIn') : t('auth.loginButton')}
           </Button>
         </form>
         <p className="mt-5 text-center text-sm text-slate-600">
-          New here?{' '}
+          {t('auth.newHere')}{' '}
           <Link to="/register" className="font-semibold text-brand-600 underline">
-            Create an account
+            {t('auth.createAccount')}
           </Link>
         </p>
       </CardBody>

@@ -5,7 +5,6 @@ import TeacherLayout from './layouts/TeacherLayout.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import GuestRoute from './components/GuestRoute.jsx';
-import Placeholder from './components/Placeholder.jsx';
 import ApprovedTeacherRoute from './components/ApprovedTeacherRoute.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
@@ -31,6 +30,9 @@ import LessonEditor from './pages/teacher/LessonEditor.jsx';
 import QuizEditor from './pages/teacher/QuizEditor.jsx';
 import LessonDiscussion from './pages/teacher/LessonDiscussion.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminCourses from './pages/admin/AdminCourses.jsx';
+import AdminAdmins from './pages/admin/AdminAdmins.jsx';
 
 export default function App() {
   return (
@@ -86,12 +88,18 @@ export default function App() {
         </Route>
       </Route>
 
-      {/* /admin/* */}
-      <Route element={<ProtectedRoute roles={['admin']} />}>
+      {/* /admin/*  (admin and super admin) */}
+      <Route element={<ProtectedRoute roles={['admin', 'super_admin']} />}>
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
-          <Route path="users" element={<Placeholder title="Users" />} />
-          <Route path="courses" element={<Placeholder title="Courses" />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="courses" element={<AdminCourses />} />
+
+          {/* Super admin only */}
+          <Route element={<ProtectedRoute roles={['super_admin']} />}>
+            <Route path="admins" element={<AdminAdmins />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

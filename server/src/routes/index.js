@@ -11,6 +11,8 @@ import replies from './replies.js';
 import certificates from './certificates.js';
 import teacher from './teacher.js';
 import admin from './admin.js';
+import payments from './payments.js';
+import superAdmin from './super.js';
 
 const router = Router();
 
@@ -26,5 +28,7 @@ router.use('/replies', replies);
 router.use('/certificates', certificates);
 router.use('/teacher', teacher);
 router.use('/admin', admin);
+router.use('/payments', payments);
+router.use('/super', superAdmin);
 
 export default router;

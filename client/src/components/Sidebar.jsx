@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BrandLink } from './ui/Logo.jsx';
 import Badge from './ui/Badge.jsx';
 import Icon from './ui/Icon.jsx';
@@ -12,6 +13,7 @@ const linkClass = ({ isActive }) =>
 
 // Used inside DashboardLayout: a fixed column on large screens, a slide-in drawer on phones.
 export default function Sidebar({ portalLabel, badgeTone, links, user, onLogout, onClose }) {
+  const { t } = useTranslation();
   const initial = user.name?.trim()?.[0]?.toUpperCase() ?? '?';
 
   return (
@@ -26,14 +28,14 @@ export default function Sidebar({ portalLabel, badgeTone, links, user, onLogout,
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close menu"
+          aria-label={t('nav.closeMenu')}
           className="rounded-lg p-2 text-slate-500 hover:bg-brand-50 lg:hidden"
         >
           <Icon name="x" className="h-6 w-6" />
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label={`${portalLabel} menu`}>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label={t('sidebar.menu', { label: portalLabel })}>
         {links.map((l) => (
           <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
             <Icon name={l.icon} />
@@ -63,7 +65,7 @@ export default function Sidebar({ portalLabel, badgeTone, links, user, onLogout,
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-200 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
         >
           <Icon name="logout" className="h-4 w-4" />
-          Logout
+          {t('nav.logout')}
         </button>
       </div>
     </div>

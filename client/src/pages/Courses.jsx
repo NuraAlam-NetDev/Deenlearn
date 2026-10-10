@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFetch } from '../hooks/useFetch.js';
 import { useDebounce } from '../hooks/useDebounce.js';
 import Alert from '../components/Alert.jsx';
@@ -22,6 +23,7 @@ const chip = (active) =>
 // Search, category and page live in the URL (/courses?q=wudu&category=fiqh&page=2),
 // so results can be shared, bookmarked and work with the back button.
 export default function Courses() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';
@@ -83,8 +85,8 @@ export default function Courses() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold text-brand-800">Courses</h1>
-      <p className="mt-1 text-slate-600">Find a course to start learning.</p>
+      <h1 className="text-4xl font-bold text-brand-800">{t('courses.title')}</h1>
+      <p className="mt-1 text-slate-600">{t('courses.subtitle')}</p>
 
       {/* Search */}
       <div className="relative mt-5">
@@ -95,8 +97,8 @@ export default function Courses() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search courses by title or description"
-          aria-label="Search courses"
+          placeholder={t('courses.searchPlaceholder')}
+          aria-label={t('courses.searchLabel')}
           dir="auto"
           className="h-12 w-full rounded-xl border border-brand-200 bg-white ps-11 pe-10 text-base outline-none placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20"
         />
@@ -104,7 +106,7 @@ export default function Courses() {
           <button
             type="button"
             onClick={() => setSearch('')}
-            aria-label="Clear search"
+            aria-label={t('courses.clearSearch')}
             className="absolute inset-y-0 end-2 my-auto h-8 rounded-md px-1.5 text-slate-400 hover:text-brand-700"
           >
             <Icon name="x" className="h-5 w-5" />
@@ -114,14 +116,18 @@ export default function Courses() {
 
       {/* Category filters */}
       {categories.length > 0 && (
-        <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Filter by category">
+        <div
+          className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+          role="group"
+          aria-label={t('courses.filterLabel')}
+        >
           <button
             type="button"
             className={chip(!category)}
             aria-pressed={!category}
             onClick={() => update({ category: '', page: '' })}
           >
-            All
+            {t('courses.all')}
           </button>
           {categories.map((c) => (
             <button
@@ -139,12 +145,10 @@ export default function Courses() {
 
       {/* Result summary */}
       <div className="mt-5 flex min-h-8 items-center justify-between gap-3" aria-live="polite">
-        <p className="text-sm text-slate-600">
-          {data && `${data.total} course${data.total === 1 ? '' : 's'} found`}
-        </p>
+        <p className="text-sm text-slate-600">{data && t('courses.found', { n: data.total })}</p>
         {filtered && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
+            {t('courses.clearFilters')}
           </Button>
         )}
       </div>
@@ -160,16 +164,12 @@ export default function Courses() {
 
       {data && data.courses.length === 0 && (
         <EmptyState
-          title={filtered ? 'No courses match your search' : 'No courses yet'}
-          text={
-            filtered
-              ? 'Try a different word, or remove a filter.'
-              : 'Courses will appear here as soon as teachers publish them.'
-          }
+          title={filtered ? t('courses.noMatchTitle') : t('courses.noneTitle')}
+          text={filtered ? t('courses.noMatchText') : t('courses.noneText')}
           action={
             filtered ? (
               <Button variant="outline" onClick={clearFilters}>
-                Clear filters
+                {t('courses.clearFilters')}
               </Button>
             ) : null
           }

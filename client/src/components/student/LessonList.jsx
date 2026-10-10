@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../ui/Icon.jsx';
 
 // Sidebar of the lesson reader: every lesson of the course, with done / bookmarked marks.
 export default function LessonList({ courseId, lessons, currentId }) {
+  const { t } = useTranslation();
   const currentRef = useRef(null);
 
   // keep the lesson you are reading visible inside a long list
@@ -42,12 +44,12 @@ export default function LessonList({ courseId, lessons, currentId }) {
               </span>
               <span className="min-w-0 flex-1 break-words" dir="auto">
                 {lesson.title}
-                {lesson.completed && <span className="sr-only"> (completed)</span>}
+                {lesson.completed && <span className="sr-only"> {t('reader.list.completedSr')}</span>}
               </span>
               {lesson.bookmarked && (
                 <>
                   <Icon name="bookmark" filled className="h-4 w-4 shrink-0 text-gold-600" />
-                  <span className="sr-only">(bookmarked)</span>
+                  <span className="sr-only">{t('reader.list.bookmarkedSr')}</span>
                 </>
               )}
             </Link>

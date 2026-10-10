@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export const ROLES = ['student', 'teacher', 'admin'];
+export const ROLES = ['student', 'teacher', 'admin', 'super_admin'];
 
 const userSchema = new mongoose.Schema(
   {

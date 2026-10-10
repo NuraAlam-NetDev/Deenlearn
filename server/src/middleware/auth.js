@@ -49,6 +49,14 @@ export const authorize =
     next();
   };
 
+// Use after protect(): only the super admin. Answers 404 to everyone else, so the feature stays hidden.
+export const requireSuperAdmin = (req, _res, next) => {
+  if (req.user?.role !== 'super_admin') {
+    return next(httpError(404, 'Not found'));
+  }
+  next();
+};
+
 // Use after authorize('teacher'): teachers must be approved by an admin first
 export const requireApprovedTeacher = (req, _res, next) => {
   const status = req.user.approvalStatus;

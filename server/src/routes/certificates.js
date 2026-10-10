@@ -9,6 +9,29 @@ const router = Router();
 router.get('/verify/:code', verifyCertificate);
 
 router.get('/mine', protect, authorize('student'), myCertificates);
-router.get('/:id/pdf', protect, authorize('student'), downloadCertificate);
-
+//router.get('/:id/pdf', protect, authorize('student'), downloadCertificate);
+router.get(
+  '/:id/pdf',
+  (req, res, next) => {
+    console.log('========== PDF ROUTE HIT ==========');
+    console.log('Certificate ID:', req.params.id);
+    next();
+  },
+  (req, res, next) => {
+    console.log('========== BEFORE PROTECT ==========');
+    next();
+  },
+  protect,
+  (req, res, next) => {
+    console.log('========== AFTER PROTECT ==========');
+    console.log('User:', req.user?._id);
+    next();
+  },
+  authorize('student'),
+  (req, res, next) => {
+    console.log('========== AFTER AUTHORIZE ==========');
+    next();
+  },
+  downloadCertificate
+);
 export default router;

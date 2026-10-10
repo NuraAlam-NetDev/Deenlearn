@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth.js';
 import { useForm } from '../hooks/useForm.js';
 import { useToast } from '../hooks/useToast.js';
@@ -16,6 +17,7 @@ const roleBox = (active) =>
   }`;
 
 export default function Register() {
+  const { t } = useTranslation();
   const { register } = useAuth();
   const toast = useToast();
   const [formError, setFormError] = useState('');
@@ -36,9 +38,9 @@ export default function Register() {
         role: data.role,
       });
       if (data.role === 'teacher') {
-        toast.info('Your teacher account is waiting for admin approval.', { title: 'Account created' });
+        toast.info(t('auth.teacherWaitingToast'), { title: t('auth.accountCreated') });
       } else {
-        toast.success('Welcome to Deenlearn!', { title: 'Account created' });
+        toast.success(t('auth.welcomeToast'), { title: t('auth.accountCreated') });
       }
       // GuestRoute redirects automatically once the user is set
     } catch (err) {
@@ -52,12 +54,12 @@ export default function Register() {
   return (
     <Card className="mx-auto max-w-md">
       <CardBody className="sm:p-8">
-        <h1 className="mb-1 text-3xl font-bold text-brand-800">Create your account</h1>
-        <p className="mb-5 text-sm text-slate-500">Join to learn, or to teach.</p>
+        <h1 className="mb-1 text-3xl font-bold text-brand-800">{t('auth.registerTitle')}</h1>
+        <p className="mb-5 text-sm text-slate-500">{t('auth.registerSubtitle')}</p>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           {formError && <Alert>{formError}</Alert>}
           <FormField
-            label="Name"
+            label={t('auth.name')}
             name="name"
             autoComplete="name"
             value={values.name}
@@ -66,7 +68,7 @@ export default function Register() {
             error={errors.name}
           />
           <FormField
-            label="Email"
+            label={t('auth.email')}
             name="email"
             type="email"
             autoComplete="email"
@@ -76,11 +78,11 @@ export default function Register() {
             error={errors.email}
           />
           <FormField
-            label="Password"
+            label={t('auth.password')}
             name="password"
             type="password"
             autoComplete="new-password"
-            hint="8 to 72 characters, with a letter and a number."
+            hint={t('auth.passwordHint')}
             value={values.password}
             onChange={onChange}
             onBlur={onBlur}
@@ -88,7 +90,7 @@ export default function Register() {
           />
 
           <fieldset>
-            <legend className="mb-1 text-sm font-medium text-slate-700">I want to</legend>
+            <legend className="mb-1 text-sm font-medium text-slate-700">{t('auth.iWantTo')}</legend>
             <div className="grid grid-cols-2 gap-2">
               <label className={roleBox(values.role === 'student')}>
                 <input
@@ -99,7 +101,7 @@ export default function Register() {
                   onChange={onChange}
                   className="accent-brand-700"
                 />
-                Learn
+                {t('auth.learn')}
               </label>
               <label className={roleBox(values.role === 'teacher')}>
                 <input
@@ -110,24 +112,22 @@ export default function Register() {
                   onChange={onChange}
                   className="accent-brand-700"
                 />
-                Teach
+                {t('auth.teach')}
               </label>
             </div>
             {values.role === 'teacher' && (
-              <p className="mt-2 text-xs text-gold-800">
-                Teacher accounts need admin approval before you can publish courses.
-              </p>
+              <p className="mt-2 text-xs text-gold-800">{t('auth.teacherNote')}</p>
             )}
           </fieldset>
 
           <Button type="submit" full loading={submitting}>
-            {submitting ? 'Creating…' : 'Register'}
+            {submitting ? t('auth.creating') : t('auth.registerButton')}
           </Button>
         </form>
         <p className="mt-5 text-center text-sm text-slate-600">
-          Already registered?{' '}
+          {t('auth.alreadyRegistered')}{' '}
           <Link to="/login" className="font-semibold text-brand-600 underline">
-            Login
+            {t('auth.loginButton')}
           </Link>
         </p>
       </CardBody>

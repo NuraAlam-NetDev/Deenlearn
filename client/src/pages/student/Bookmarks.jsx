@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../services/api.js';
@@ -17,6 +18,7 @@ const PAGE_SIZE = 20;
 
 // /student/bookmarks  -> lessons the student saved, newest first
 export default function Bookmarks() {
+  const { t } = useTranslation();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1);
@@ -27,7 +29,7 @@ export default function Bookmarks() {
     setRemoving(bookmark._id);
     try {
       await setLessonBookmark(bookmark.lesson._id, false);
-      toast.info('Bookmark removed.');
+      toast.info(t('student.bookmarks.removed'));
       // removed the last one on this page: step back a page
       if (data.bookmarks.length === 1 && page > 1) setParams({ page: String(page - 1) });
       else reload();
@@ -40,8 +42,8 @@ export default function Bookmarks() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-800">Bookmarks</h1>
-      <p className="mt-1 text-slate-600">Lessons you saved to come back to.</p>
+      <h1 className="text-3xl font-bold text-brand-800">{t('student.bookmarks.title')}</h1>
+      <p className="mt-1 text-slate-600">{t('student.bookmarks.subtitle')}</p>
 
       {error && (
         <div className="mt-5">
@@ -60,9 +62,9 @@ export default function Bookmarks() {
       {data && data.bookmarks.length === 0 && (
         <div className="mt-5">
           <EmptyState
-            title="No bookmarks yet"
-            text="While reading a lesson, tap the bookmark button to save it here."
-            action={<ButtonLink to="/student/courses">Go to my courses</ButtonLink>}
+            title={t('student.bookmarks.emptyTitle')}
+            text={t('student.bookmarks.emptyText')}
+            action={<ButtonLink to="/student/courses">{t('student.bookmarks.goCourses')}</ButtonLink>}
           />
         </div>
       )}
@@ -70,7 +72,7 @@ export default function Bookmarks() {
       {data && data.bookmarks.length > 0 && (
         <>
           <p className="mt-5 text-sm text-slate-600" aria-live="polite">
-            {data.total} bookmark{data.total === 1 ? '' : 's'}
+            {t('student.bookmarks.count', { count: data.total })}
           </p>
           <ul className="mt-2 space-y-3">
             {data.bookmarks.map((b) => (
@@ -88,15 +90,16 @@ export default function Bookmarks() {
                     </Link>
                   </h2>
                   <p className="text-sm text-slate-500">
-                    <span dir="auto">{b.course.title}</span> · saved {formatDate(b.createdAt)}
+                    <span dir="auto">{b.course.title}</span> ·{' '}
+                    {t('student.bookmarks.savedOn', { date: formatDate(b.createdAt) })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => remove(b)}
                   disabled={removing === b._id}
-                  aria-label={`Remove bookmark: ${b.lesson.title}`}
-                  title="Remove bookmark"
+                  aria-label={t('student.bookmarks.removeLabel', { title: b.lesson.title })}
+                  title={t('student.bookmarks.removeTitle')}
                   className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
                 >
                   <Icon name="trash" className="h-5 w-5" />

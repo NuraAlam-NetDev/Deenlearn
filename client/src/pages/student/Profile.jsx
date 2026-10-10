@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useForm } from '../../hooks/useForm.js';
@@ -14,6 +15,7 @@ import Button from '../../components/ui/Button.jsx';
 import { Card, CardBody, CardHeader, StatCard } from '../../components/ui/Card.jsx';
 
 function NameForm() {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const toast = useToast();
   const [formError, setFormError] = useState('');
@@ -31,7 +33,7 @@ function NameForm() {
     try {
       const res = await updateProfile({ name: data.name.trim() });
       updateUser(res.user);
-      toast.success('Your name has been updated.');
+      toast.success(t('student.profile.nameUpdated'));
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
       if (Object.keys(fieldErrors).length) setServerErrors(fieldErrors);
@@ -43,12 +45,12 @@ function NameForm() {
 
   return (
     <Card>
-      <CardHeader title="Your details" />
+      <CardHeader title={t('student.profile.detailsTitle')} />
       <CardBody>
         <form onSubmit={onSubmit} noValidate className="max-w-md space-y-4">
           {formError && <Alert>{formError}</Alert>}
           <FormField
-            label="Name"
+            label={t('auth.name')}
             name="name"
             autoComplete="name"
             value={values.name}
@@ -57,15 +59,15 @@ function NameForm() {
             error={errors.name}
           />
           <FormField
-            label="Email"
+            label={t('auth.email')}
             name="email"
             type="email"
             value={user.email}
             readOnly
-            hint="Your email is your login. It cannot be changed here."
+            hint={t('student.profile.emailHint')}
           />
           <Button type="submit" loading={saving} disabled={unchanged}>
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? t('student.profile.saving') : t('student.profile.saveChanges')}
           </Button>
         </form>
       </CardBody>
@@ -74,6 +76,7 @@ function NameForm() {
 }
 
 function PasswordForm({ onDone }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -87,7 +90,7 @@ function PasswordForm({ onDone }) {
     setSaving(true);
     try {
       await changePassword({ currentPassword: data.currentPassword, newPassword: data.newPassword });
-      toast.success('Your password has been changed. Other devices were logged out.');
+      toast.success(t('student.profile.passwordChanged'));
       onDone(); // empties the form
     } catch (err) {
       const fieldErrors = getFieldErrors(err);
@@ -102,7 +105,7 @@ function PasswordForm({ onDone }) {
     <form onSubmit={onSubmit} noValidate className="max-w-md space-y-4">
       {formError && <Alert>{formError}</Alert>}
       <FormField
-        label="Current password"
+        label={t('student.profile.currentPassword')}
         name="currentPassword"
         type="password"
         autoComplete="current-password"
@@ -112,18 +115,18 @@ function PasswordForm({ onDone }) {
         error={errors.currentPassword}
       />
       <FormField
-        label="New password"
+        label={t('student.profile.newPassword')}
         name="newPassword"
         type="password"
         autoComplete="new-password"
-        hint="8 to 72 characters, with a letter and a number."
+        hint={t('auth.passwordHint')}
         value={values.newPassword}
         onChange={onChange}
         onBlur={onBlur}
         error={errors.newPassword}
       />
       <FormField
-        label="Repeat new password"
+        label={t('student.profile.repeatPassword')}
         name="confirmPassword"
         type="password"
         autoComplete="new-password"
@@ -133,7 +136,7 @@ function PasswordForm({ onDone }) {
         error={errors.confirmPassword}
       />
       <Button type="submit" loading={saving}>
-        {saving ? 'Changing…' : 'Change password'}
+        {saving ? t('student.profile.changing') : t('student.profile.changePassword')}
       </Button>
     </form>
   );
@@ -141,6 +144,7 @@ function PasswordForm({ onDone }) {
 
 // /student/profile
 export default function Profile() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data: stats } = useFetch('/enrollments/summary');
   const [passwordFormKey, setPasswordFormKey] = useState(0);
@@ -148,7 +152,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-brand-800">Profile</h1>
+      <h1 className="text-3xl font-bold text-brand-800">{t('student.profile.title')}</h1>
 
       <Card>
         <CardBody className="flex items-center gap-4">
@@ -164,8 +168,10 @@ export default function Profile() {
             </p>
             <p className="ltr-isolate truncate text-sm text-slate-500">{user.email}</p>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              <Badge tone="green">Student</Badge>
-              {user.createdAt && <span>Member since {formatDate(user.createdAt)}</span>}
+              <Badge tone="green">{t('student.profile.badge')}</Badge>
+              {user.createdAt && (
+                <span>{t('student.profile.memberSince', { date: formatDate(user.createdAt) })}</span>
+              )}
             </p>
           </div>
         </CardBody>
@@ -173,17 +179,20 @@ export default function Profile() {
 
       {stats && stats.enrolledCourses > 0 && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Courses enrolled" value={stats.enrolledCourses} />
-          <StatCard label="Courses completed" value={stats.completedCourses} />
-          <StatCard label="Lessons completed" value={stats.completedLessons} />
-          <StatCard label="Bookmarks" value={stats.bookmarks} />
+          <StatCard label={t('student.profile.statsEnrolled')} value={stats.enrolledCourses} />
+          <StatCard label={t('student.profile.statsCompleted')} value={stats.completedCourses} />
+          <StatCard label={t('student.profile.statsLessons')} value={stats.completedLessons} />
+          <StatCard label={t('student.profile.statsBookmarks')} value={stats.bookmarks} />
         </div>
       )}
 
       <NameForm />
 
       <Card>
-        <CardHeader title="Change password" subtitle="You will stay logged in here. Your other devices will be logged out." />
+        <CardHeader
+          title={t('student.profile.passwordTitle')}
+          subtitle={t('student.profile.passwordSubtitle')}
+        />
         <CardBody>
           <PasswordForm key={passwordFormKey} onDone={() => setPasswordFormKey((k) => k + 1)} />
         </CardBody>

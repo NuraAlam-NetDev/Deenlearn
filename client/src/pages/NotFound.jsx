@@ -1,12 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import { ButtonLink } from '../components/ui/Button.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 
 export default function NotFound() {
+  const { t } = useTranslation();
   return (
     <EmptyState
-      title="Page not found"
-      text="The page you are looking for does not exist or has moved."
-      action={<ButtonLink to="/">Back home</ButtonLink>}
+      title={t('notFound.title')}
+      text={t('notFound.text')}
+      action={<ButtonLink to="/">{t('notFound.back')}</ButtonLink>}
     />
   );
 }

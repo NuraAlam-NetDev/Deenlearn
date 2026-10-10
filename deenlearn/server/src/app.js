@@ -1,0 +1,45 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import routes from './routes/index.js';
+import { apiLimiter } from './middleware/rateLimiters.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+
+const app = express();
+
+// Behind a proxy/load balancer (Render, Railway, Nginx...) so rate limiting sees real IPs
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
+
+app.use(helmet());
+
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      // allow same-origin / curl / server-to-server (no Origin header)
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true, // needed so the browser sends/accepts auth cookies
+  })
+);
+
+// Most bodies are tiny (32kb leaves room for long Bengali/Arabic text, 3 bytes per character).
+// Rich-text lessons can be large, so only lesson create/update get the bigger limit.
+const smallJson = express.json({ limit: '32kb' });
+const lessonJson = express.json({ limit: '600kb' });
+const LESSON_BODY = /^\/api\/teacher\/(courses\/[a-f\d]{24}\/lessons|lessons\/[a-f\d]{24})\/?$/i;
+app.use((req, res, next) => (LESSON_BODY.test(req.path) ? lessonJson : smallJson)(req, res, next));
+app.use(cookieParser());
+
+app.get('/', (_req, res) => res.json({ name: 'Deenlearn API', health: '/api/health' }));
+app.use('/api', apiLimiter, routes);
+
+app.use(notFound);
+app.use(errorHandler);
+
+export default app;

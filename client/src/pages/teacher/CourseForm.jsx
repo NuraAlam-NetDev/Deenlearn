@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n/index.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useForm } from '../../hooks/useForm.js';
 import { useToast } from '../../hooks/useToast.js';
@@ -19,24 +21,32 @@ import TextAreaField from '../../components/ui/TextAreaField.jsx';
 import { Spinner } from '../../components/Spinner.jsx';
 
 const CATEGORIES = ['quran', 'hadith', 'fiqh', 'aqeedah', 'seerah', 'arabic', 'general'];
+const WHOLE_NUMBER = /^\d+$/;
 
-// Same limits as the server (server/src/validators/course.js)
-function validateCourse({ title, category, description }) {
+// Same limits as the server (server/src/validators/course.js). Messages follow the selected language.
+function validateCourse({ title, category, description, priceBDT, priceUSD }) {
+  const t = (key) => i18n.t(key);
   const errors = {};
-  const t = title.trim();
-  if (!t) errors.title = 'Title is required';
-  else if (t.length < 3) errors.title = 'Title is too short (at least 3 characters)';
-  else if (t.length > 150) errors.title = 'Title must be at most 150 characters';
+  const name = title.trim();
+  if (!name) errors.title = t('teacher.form.titleRequired');
+  else if (name.length < 3) errors.title = t('teacher.form.titleShort');
+  else if (name.length > 150) errors.title = t('teacher.form.titleLong');
 
-  if (!category.trim()) errors.category = 'Category is required';
-  else if (category.trim().length > 50) errors.category = 'Category must be at most 50 characters';
+  if (!category.trim()) errors.category = t('teacher.form.categoryRequired');
+  else if (category.trim().length > 50) errors.category = t('teacher.form.categoryLong');
 
-  if (description.trim().length > 5000) errors.description = 'Description must be at most 5000 characters';
+  if (description.trim().length > 5000) errors.description = t('teacher.form.descriptionLong');
+
+  if (!WHOLE_NUMBER.test(String(priceBDT).trim())) errors.priceBDT = t('coursePrice.invalid');
+  else if (Number(priceBDT) > 1000000) errors.priceBDT = t('coursePrice.tooHighBDT');
+  if (!WHOLE_NUMBER.test(String(priceUSD).trim())) errors.priceUSD = t('coursePrice.invalid');
+  else if (Number(priceUSD) > 10000) errors.priceUSD = t('coursePrice.tooHighUSD');
   return errors;
 }
 
 // Cover image: saved immediately (it is its own request), so it lives outside the main form.
 function CoverImage({ courseId, initialUrl }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [url, setUrl] = useState(initialUrl);
   const [removing, setRemoving] = useState(false);
@@ -44,7 +54,7 @@ function CoverImage({ courseId, initialUrl }) {
   async function handleUpload(file, options) {
     const { course } = await uploadThumbnail(courseId, file, options);
     setUrl(course.thumbnail);
-    toast.success('Cover image updated');
+    toast.success(t('teacher.form.coverUpdated'));
   }
 
   async function handleRemove() {
@@ -52,7 +62,7 @@ function CoverImage({ courseId, initialUrl }) {
     try {
       await deleteThumbnail(courseId);
       setUrl('');
-      toast.success('Cover image removed');
+      toast.success(t('teacher.form.coverRemoved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -62,20 +72,20 @@ function CoverImage({ courseId, initialUrl }) {
 
   return (
     <Card className="space-y-3 p-5">
-      <h2 className="font-display text-xl font-bold text-brand-800">Cover image</h2>
+      <h2 className="font-display text-xl font-bold text-brand-800">{t('teacher.form.coverTitle')}</h2>
       {url && (
         <div className="flex items-center gap-3">
-          <img src={url} alt="Current cover" className="aspect-video w-40 rounded-lg object-cover" />
+          <img src={url} alt={t('teacher.form.currentCover')} className="aspect-video w-40 rounded-lg object-cover" />
           <Button variant="outline" size="sm" loading={removing} onClick={handleRemove}>
-            Remove
+            {t('teacher.form.remove')}
           </Button>
         </div>
       )}
       <FileUploader
         accept="image/*"
         multiple={false}
-        label={url ? 'Replace image' : 'Upload image'}
-        hint="JPG, PNG, WEBP or GIF"
+        label={url ? t('teacher.form.replaceImage') : t('teacher.form.uploadImage')}
+        hint={t('teacher.form.imageHint')}
         onUpload={handleUpload}
       />
     </Card>
@@ -83,6 +93,7 @@ function CoverImage({ courseId, initialUrl }) {
 }
 
 function CourseFormBody({ course }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const editing = !!course;
@@ -94,6 +105,8 @@ function CourseFormBody({ course }) {
       title: course?.title ?? '',
       category: course?.category ?? 'general',
       description: course?.description ?? '',
+      priceBDT: String(course?.priceBDT ?? 0),
+      priceUSD: String(course?.priceUSD ?? 0),
     },
     validate: validateCourse,
   });
@@ -101,15 +114,21 @@ function CourseFormBody({ course }) {
   async function submit(v) {
     setFormError('');
     setSaving(true);
-    const body = { title: v.title.trim(), category: v.category.trim(), description: v.description.trim() };
+    const body = {
+      title: v.title.trim(),
+      category: v.category.trim(),
+      description: v.description.trim(),
+      priceBDT: Number(v.priceBDT.trim() || 0),
+      priceUSD: Number(v.priceUSD.trim() || 0),
+    };
     try {
       if (editing) {
         await updateCourse(course._id, body);
-        toast.success('Course saved');
+        toast.success(t('teacher.form.saved'));
         navigate(`/teacher/courses/${course._id}`);
       } else {
         const { course: created } = await createCourse(body);
-        toast.success('Course created. Now add its lessons.');
+        toast.success(t('teacher.form.created'));
         navigate(`/teacher/courses/${created._id}`);
       }
     } catch (err) {
@@ -129,7 +148,7 @@ function CourseFormBody({ course }) {
           {formError && <Alert>{formError}</Alert>}
 
           <FormField
-            label="Title"
+            label={t('teacher.form.title')}
             name="title"
             value={values.title}
             onChange={onChange}
@@ -140,45 +159,82 @@ function CourseFormBody({ course }) {
           />
 
           <div>
-            <FormField
-              label="Category"
+            <label htmlFor="course-category" className="mb-1 block text-sm font-medium text-slate-700">
+              {t('teacher.form.category')}
+            </label>
+            <select
+              id="course-category"
               name="category"
-              list="course-categories"
               value={values.category}
               onChange={onChange}
               onBlur={onBlur}
-              error={errors.category}
-              hint="Pick one or type your own."
-              dir="ltr"
-              maxLength={50}
-            />
-            <datalist id="course-categories">
+              className="h-11 w-full rounded-lg border border-brand-200 bg-white px-3 text-base capitalize outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 sm:h-10 sm:text-sm"
+            >
               {CATEGORIES.map((c) => (
-                <option key={c} value={c} />
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
-            </datalist>
+            </select>
+            {errors.category && <p className="mt-1 text-xs text-red-600">{errors.category}</p>}
           </div>
 
           <TextAreaField
-            label="Description"
+            label={t('teacher.form.description')}
             name="description"
             rows={6}
             value={values.description}
             onChange={onChange}
             onBlur={onBlur}
             error={errors.description}
-            hint="What will students learn? Shown on the course page."
+            hint={t('teacher.form.descriptionHint')}
           />
+
+          <fieldset className="space-y-3 rounded-xl border border-brand-100 p-4">
+            <legend className="px-1 font-display text-lg font-bold text-brand-800">
+              {t('coursePrice.title')}
+            </legend>
+            <p className="text-sm text-slate-500">{t('coursePrice.hint')}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                label={t('coursePrice.bdtLabel')}
+                name="priceBDT"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={values.priceBDT}
+                onChange={onChange}
+                onBlur={onBlur}
+                error={errors.priceBDT}
+                hint={t('coursePrice.bdtHint')}
+              />
+              <FormField
+                label={t('coursePrice.usdLabel')}
+                name="priceUSD"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={values.priceUSD}
+                onChange={onChange}
+                onBlur={onBlur}
+                error={errors.priceUSD}
+                hint={t('coursePrice.usdHint')}
+              />
+            </div>
+            <p className="text-xs text-slate-500">{t('coursePrice.note')}</p>
+          </fieldset>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Link
               to={editing ? `/teacher/courses/${course._id}` : '/teacher/courses'}
               className="inline-flex h-11 items-center justify-center rounded-lg border border-brand-700 px-4 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:h-10 sm:text-base"
             >
-              Cancel
+              {t('teacher.form.cancel')}
             </Link>
             <Button type="submit" loading={saving}>
-              {editing ? 'Save changes' : 'Create course'}
+              {editing ? t('teacher.form.save') : t('teacher.form.create')}
             </Button>
           </div>
         </form>
@@ -189,12 +245,15 @@ function CourseFormBody({ course }) {
 
 // /teacher/courses/new  and  /teacher/courses/:id/edit
 export default function CourseForm() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { data, loading, error } = useFetch(id ? `/teacher/courses/${id}` : null);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-3xl font-bold text-brand-800">{id ? 'Edit course' : 'New course'}</h1>
+      <h1 className="text-3xl font-bold text-brand-800">
+        {id ? t('teacher.form.editTitle') : t('teacher.form.newTitle')}
+      </h1>
       {loading && <Spinner />}
       {error && <Alert>{error}</Alert>}
       {!id && <CourseFormBody />}

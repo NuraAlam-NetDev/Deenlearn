@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import Alert from '../../components/Alert.jsx';
@@ -14,9 +15,9 @@ import { lessonLink } from '../../utils/progress.js';
 
 const PAGE_SIZE = 9;
 const TABS = [
-  { value: '', label: 'All' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: '', key: 'tabAll' },
+  { value: 'in_progress', key: 'tabInProgress' },
+  { value: 'completed', key: 'tabCompleted' },
 ];
 
 const chip = (active) =>
@@ -28,9 +29,10 @@ const chip = (active) =>
 
 // /student/courses?status=in_progress&q=fiqh&page=2  (filters live in the URL, so back button works)
 export default function StudentCourses() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
-  const status = TABS.some((t) => t.value && t.value === params.get('status')) ? params.get('status') : '';
+  const status = TABS.some((tab) => tab.value && tab.value === params.get('status')) ? params.get('status') : '';
   const page = Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1);
 
   const [search, setSearch] = useState(q);
@@ -81,8 +83,8 @@ export default function StudentCourses() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-800">My courses</h1>
-      <p className="mt-1 text-slate-600">Every course you have joined, and how far you are in each.</p>
+      <h1 className="text-3xl font-bold text-brand-800">{t('student.courses.title')}</h1>
+      <p className="mt-1 text-slate-600">{t('student.courses.subtitle')}</p>
 
       <div className="relative mt-5">
         <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-slate-400">
@@ -92,8 +94,8 @@ export default function StudentCourses() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search my courses"
-          aria-label="Search my courses"
+          placeholder={t('student.courses.searchPlaceholder')}
+          aria-label={t('student.courses.searchLabel')}
           dir="auto"
           className="h-12 w-full rounded-xl border border-brand-200 bg-white ps-11 pe-10 text-base outline-none placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20"
         />
@@ -101,7 +103,7 @@ export default function StudentCourses() {
           <button
             type="button"
             onClick={() => setSearch('')}
-            aria-label="Clear search"
+            aria-label={t('student.courses.clearSearch')}
             className="absolute inset-y-0 end-2 my-auto h-8 rounded-md px-1.5 text-slate-400 hover:text-brand-700"
           >
             <Icon name="x" className="h-5 w-5" />
@@ -109,27 +111,27 @@ export default function StudentCourses() {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filter by progress">
-        {TABS.map((t) => (
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={t('student.courses.filterLabel')}>
+        {TABS.map((tab) => (
           <button
-            key={t.value}
+            key={tab.value}
             type="button"
-            className={chip(status === t.value)}
-            aria-pressed={status === t.value}
-            onClick={() => update({ status: t.value, page: '' })}
+            className={chip(status === tab.value)}
+            aria-pressed={status === tab.value}
+            onClick={() => update({ status: tab.value, page: '' })}
           >
-            {t.label}
+            {t(`student.courses.${tab.key}`)}
           </button>
         ))}
       </div>
 
       <div className="mt-5 flex min-h-8 items-center justify-between gap-3" aria-live="polite">
         <p className="text-sm text-slate-600">
-          {data && `${data.total} course${data.total === 1 ? '' : 's'}`}
+          {data && t('student.courses.found', { count: data.total })}
         </p>
         {filtered && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
+            {t('student.courses.clearFilters')}
           </Button>
         )}
       </div>
@@ -149,26 +151,24 @@ export default function StudentCourses() {
             progress={e.progress}
             thumbnail={e.course.thumbnail}
             to={lessonLink(e.course._id, e.nextLessonId, e.firstLessonId) ?? `/courses/${e.course._id}`}
-            badge={e.progress === 100 ? <Badge tone="green">Completed</Badge> : null}
+            badge={
+              e.progress === 100 ? <Badge tone="green">{t('student.courses.tabCompleted')}</Badge> : null
+            }
           />
         ))}
       </div>
 
       {data && data.enrollments.length === 0 && (
         <EmptyState
-          title={filtered ? 'No courses match' : 'No courses yet'}
-          text={
-            filtered
-              ? 'Try a different word, or remove a filter.'
-              : 'You have not enrolled in any course yet. Find one and start today.'
-          }
+          title={filtered ? t('student.courses.noMatchTitle') : t('student.courses.noneTitle')}
+          text={filtered ? t('student.courses.noMatchText') : t('student.courses.noneText')}
           action={
             filtered ? (
               <Button variant="outline" onClick={clearFilters}>
-                Clear filters
+                {t('student.courses.clearFilters')}
               </Button>
             ) : (
-              <ButtonLink to="/courses">Browse courses</ButtonLink>
+              <ButtonLink to="/courses">{t('student.courses.browse')}</ButtonLink>
             )
           }
         />

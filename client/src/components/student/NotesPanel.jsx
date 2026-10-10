@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../services/api.js';
@@ -13,6 +14,7 @@ import TextAreaField from '../ui/TextAreaField.jsx';
 const MAX = 8000; // same as the server
 
 function NoteEditor({ lessonId, initial }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [text, setText] = useState(initial.content);
   const [saved, setSaved] = useState(initial); // { content, updatedAt } as stored on the server
@@ -35,7 +37,7 @@ function NoteEditor({ lessonId, initial }) {
       const { note } = await saveNote(lessonId, value);
       setSaved(note ?? { content: '', updatedAt: null });
       if (!note) setText('');
-      toast.success(note ? 'Note saved.' : 'Note deleted.');
+      toast.success(note ? t('reader.notes.saved') : t('reader.notes.deleted'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -43,15 +45,19 @@ function NoteEditor({ lessonId, initial }) {
     }
   }
 
+  let status = '';
+  if (dirty) status = `${t('reader.notes.unsaved')} · `;
+  else if (saved.updatedAt) status = `${t('reader.notes.savedAt', { date: formatDateTime(saved.updatedAt) })} · `;
+
   return (
     <div className="space-y-3">
       <TextAreaField
-        label="Your private note for this lesson"
-        hint="Only you can see this. Press Ctrl+Enter (or Cmd+Enter) to save."
+        label={t('reader.notes.label')}
+        hint={t('reader.notes.hint')}
         rows={8}
         value={text}
         maxLength={MAX}
-        placeholder="Write what you want to remember…"
+        placeholder={t('reader.notes.placeholder')}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && dirty && !saving) {
@@ -63,24 +69,24 @@ function NoteEditor({ lessonId, initial }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={() => save()} loading={saving} disabled={!dirty}>
-          Save note
+          {t('reader.notes.save')}
         </Button>
         {saved.content && (
           <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={saving}>
-            Delete note
+            {t('reader.notes.delete')}
           </Button>
         )}
         <p className="text-xs text-slate-500 sm:ms-auto" aria-live="polite">
-          {dirty ? 'Unsaved changes · ' : saved.updatedAt ? `Saved ${formatDateTime(saved.updatedAt)} · ` : ''}
+          {status}
           {text.length} / {MAX}
         </p>
       </div>
 
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete this note?"
-        message="Your note for this lesson will be removed. This cannot be undone."
-        confirmLabel="Delete note"
+        title={t('reader.notes.confirmTitle')}
+        message={t('reader.notes.confirmText')}
+        confirmLabel={t('reader.notes.delete')}
         danger
         onConfirm={async () => {
           await save('');
@@ -94,10 +100,11 @@ function NoteEditor({ lessonId, initial }) {
 
 // The student's private note on one lesson
 export default function NotesPanel({ lessonId }) {
+  const { t } = useTranslation();
   const { data, loading, error } = useFetch(`/lessons/${lessonId}/note`);
 
   if (loading && !data) return <Skeleton className="h-48 w-full" />;
-  if (error || !data) return <Alert>{error || 'Could not load your note.'}</Alert>;
+  if (error || !data) return <Alert>{error || t('reader.notes.loadError')}</Alert>;
 
   return (
     <NoteEditor

@@ -7,6 +7,8 @@ export const createCourseSchema = z.object({
   description: z.string().trim().max(5000).default(''),
   category: z.string().trim().toLowerCase().min(1).max(50).default('general'),
   thumbnail: optionalUrl.default(''),
+  priceBDT: z.coerce.number().int().min(0).max(1000000).default(0),
+  priceUSD: z.coerce.number().int().min(0).max(10000).default(0),
 });
 
 export const updateCourseSchema = createCourseSchema.partial().refine(...atLeastOneField);

@@ -8,6 +8,7 @@ import { pageMeta, escapeRegex } from '../utils/pagination.js';
 import { attachCounts } from '../services/courseStats.js';
 import { uploadFile, deleteAssets } from '../services/media.js';
 import { deleteCourseCascade } from '../services/courseCleanup.js';
+import { slugify } from '../utils/slug.js';
 
 // GET /api/teacher/courses?page=&limit=&status=published|draft&q=
 export const listMyCourses = asyncHandler(async (req, res) => {
@@ -88,7 +89,7 @@ export const unpublishCourse = asyncHandler(async (req, res) => {
 export const uploadThumbnail = asyncHandler(async (req, res) => {
   const course = req.course;
   const file = await uploadFile(req.file, {
-    folder: `deenlearn/${req.user._id}/thumbnails`,
+    folder: `deenlearn/courses/${slugify(course.title)}-${course._id}/thumbnails`,
     allow: ['image'],
   });
 
