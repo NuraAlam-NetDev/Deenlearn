@@ -21,6 +21,7 @@ import Bookmarks from './pages/student/Bookmarks.jsx';
 import Profile from './pages/student/Profile.jsx';
 import Notes from './pages/student/Notes.jsx';
 import Certificates from './pages/student/Certificates.jsx';
+import MyReport from './pages/student/MyReport.jsx';
 import VerifyCertificate from './pages/VerifyCertificate.jsx';
 import TeacherHome from './pages/teacher/TeacherHome.jsx';
 import MyCourses from './pages/teacher/MyCourses.jsx';
@@ -29,6 +30,8 @@ import CourseManage from './pages/teacher/CourseManage.jsx';
 import LessonEditor from './pages/teacher/LessonEditor.jsx';
 import QuizEditor from './pages/teacher/QuizEditor.jsx';
 import LessonDiscussion from './pages/teacher/LessonDiscussion.jsx';
+import StudentProgressPage from './components/report/StudentProgressPage.jsx';
+import StudentDetailPage from './components/report/StudentDetailPage.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import AdminCourses from './pages/admin/AdminCourses.jsx';
@@ -65,6 +68,7 @@ export default function App() {
           <Route path="bookmarks" element={<Bookmarks />} />
           <Route path="notes" element={<Notes />} />
           <Route path="certificates" element={<Certificates />} />
+<Route path="report" element={<MyReport />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -83,6 +87,8 @@ export default function App() {
             <Route path="courses/:courseId/lessons/:lessonId" element={<LessonEditor />} />
             <Route path="courses/:courseId/lessons/:lessonId/quiz" element={<QuizEditor />} />
             <Route path="courses/:courseId/lessons/:lessonId/discussion" element={<LessonDiscussion />} />
+            <Route path="students" element={<StudentProgressPage base="/teacher" detailBase="/teacher/students" />} />
+            <Route path="students/:studentId" element={<StudentDetailPage base="/teacher" backTo="/teacher/students" />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -94,6 +100,8 @@ export default function App() {
           <Route index element={<AdminHome />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="courses" element={<AdminCourses />} />
+          <Route path="students" element={<StudentProgressPage base="/admin" detailBase="/admin/students" />} />
+          <Route path="students/:studentId" element={<StudentDetailPage base="/admin" backTo="/admin/students" />} />
 
           {/* Super admin only */}
           <Route element={<ProtectedRoute roles={['super_admin']} />}>

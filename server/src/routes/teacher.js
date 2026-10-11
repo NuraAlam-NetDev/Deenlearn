@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { teacherStudents, teacherStudentReport } from '../controllers/studentProgressController.js';
+import { studentListQuery } from '../validators/progress.js';
 import { protect, authorize, requireApprovedTeacher } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loadOwnedCourse, loadOwnedLesson } from '../middleware/ownership.js';
@@ -71,5 +73,9 @@ router.get('/lessons/:id/quiz/results', loadOwnedLesson, validate(quizResultsQue
 // ---- Lesson files (PDF / image / audio) ----
 router.post('/lessons/:id/attachments', loadOwnedLesson, ...uploadChain, addAttachment);
 router.delete('/lessons/:id/attachments/:attachmentId', loadOwnedLesson, removeAttachment);
+
+// Students in my own courses
+router.get('/students', validate(studentListQuery, 'query'), teacherStudents);
+router.get('/students/:studentId/report', teacherStudentReport);
 
 export default router;

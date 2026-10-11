@@ -12,6 +12,7 @@ import { httpError } from '../utils/httpError.js';
 import { pageMeta } from '../utils/pagination.js';
 import { syncCourseProgress } from '../services/courseAccess.js';
 import { uploadFile, deleteAssets } from '../services/media.js';
+import { parseLessonLanguage } from '../utils/languages.js';
 import { slugify } from '../utils/slug.js';
 
 const MAX_ATTACHMENTS = 20;
@@ -117,12 +118,14 @@ export const addAttachment = asyncHandler(async (req, res) => {
   const courseFolder = `${slugify(course?.title)}-${lesson.course}`;
   const lessonFolder = `${slugify(lesson.title)}-${lesson._id}`;
 
+  // The file goes into a folder per language: .../lessons/<lesson>/<language>/
+  const language = parseLessonLanguage(req.body?.language);
   const file = await uploadFile(req.file, {
-    folder: `deenlearn/courses/${courseFolder}/lessons/${lessonFolder}`,
+    folder: `deenlearn/courses/${courseFolder}/lessons/${lessonFolder}/${language}`,
   });
 
   try {
-    lesson.attachments.push(file);
+    lesson.attachments.push({ ...file, language });
     await lesson.save();
   } catch (err) {
     await deleteAssets([file]); // don't leave an orphan in Cloudinary

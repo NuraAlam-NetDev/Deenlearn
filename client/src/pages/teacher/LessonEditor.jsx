@@ -14,6 +14,7 @@ import { formatBytes } from '../../utils/format.js';
 import { toHtml } from '../../utils/richText.js';
 import Alert from '../../components/Alert.jsx';
 import FileUploader from '../../components/FileUploader.jsx';
+import { LANGUAGES } from '../../i18n/index.js';
 import FormField from '../../components/FormField.jsx';
 import RichTextEditor from '../../components/RichTextEditor.jsx';
 import { Spinner } from '../../components/Spinner.jsx';
@@ -57,7 +58,7 @@ function AttachmentRow({ attachment, onRemove, removing }) {
             {attachment.name}
           </a>
           <p className="text-xs uppercase text-slate-500">
-            {attachment.kind} · {formatBytes(attachment.size)}
+            {attachment.kind} · {(attachment.language || 'en').toUpperCase()} · {formatBytes(attachment.size)}
           </p>
         </div>
         <Button variant="ghost" size="sm" loading={removing} onClick={() => onRemove(attachment)} aria-label={`Remove ${attachment.name}`}>
@@ -73,9 +74,10 @@ function Attachments({ lesson }) {
   const toast = useToast();
   const [files, setFiles] = useState(lesson.attachments ?? []);
   const [removingId, setRemovingId] = useState(null);
+  const [uploadLang, setUploadLang] = useState('en'); // language the next file is saved in
 
   async function handleUpload(file, options) {
-    const { attachment } = await uploadAttachment(lesson._id, file, options);
+    const { attachment } = await uploadAttachment(lesson._id, file, { ...options, fields: { language: uploadLang } });
     setFiles((list) => [...list, attachment]);
     toast.success(`Uploaded ${attachment.name}`);
   }
@@ -112,6 +114,22 @@ function Attachments({ lesson }) {
           ))}
         </ul>
       )}
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Language of this file</span>
+        <select
+          value={uploadLang}
+          onChange={(e) => setUploadLang(e.target.value)}
+          className="h-10 max-w-xs rounded-lg border border-brand-200 bg-white px-3 text-sm"
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-slate-500">Students pick this language when they open the PDF.</span>
+      </label>
 
       {full ? (
         <Alert type="info">This lesson has the maximum number of files. Remove one to add another.</Alert>

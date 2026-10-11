@@ -41,6 +41,7 @@ export default function AdminLayout() {
     { to: '/admin', label: t('admin.layout.overview'), icon: 'chart', end: true },
     { to: '/admin/users', label: t('admin.layout.users'), icon: 'users' },
     { to: '/admin/courses', label: t('admin.layout.courses'), icon: 'book' },
+    { to: '/admin/students', label: t('progress.nav'), icon: 'users' },
   ];
   // Only the super admin manages other admins
   if (user?.role === 'super_admin') {

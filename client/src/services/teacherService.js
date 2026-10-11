@@ -22,9 +22,11 @@ export const reorderLessons = (courseId, lessonIds) =>
 
 // ---- Uploads (multipart, with progress) ----
 // options: { onProgress(percent 0-100), signal (AbortSignal) }
-function upload(url, file, { onProgress, signal } = {}) {
+function upload(url, file, { onProgress, signal, fields = {} } = {}) {
   const form = new FormData();
   form.append('file', file);
+  // extra form fields, e.g. { language: 'bn' }
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
   return api
     .post(url, form, {
       signal,

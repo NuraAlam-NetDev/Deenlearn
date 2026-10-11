@@ -91,6 +91,27 @@ import zhCoursePrice from './locales/zh.coursePrice.json';
 import arCoursePrice from './locales/ar.coursePrice.json';
 import hiCoursePrice from './locales/hi.coursePrice.json';
 import urCoursePrice from './locales/ur.coursePrice.json';
+import enReport from './locales/en.report.json';
+import bnReport from './locales/bn.report.json';
+import jaReport from './locales/ja.report.json';
+import zhReport from './locales/zh.report.json';
+import arReport from './locales/ar.report.json';
+import hiReport from './locales/hi.report.json';
+import urReport from './locales/ur.report.json';
+import enProgress from './locales/en.progress.json';
+import bnProgress from './locales/bn.progress.json';
+import jaProgress from './locales/ja.progress.json';
+import zhProgress from './locales/zh.progress.json';
+import arProgress from './locales/ar.progress.json';
+import hiProgress from './locales/hi.progress.json';
+import urProgress from './locales/ur.progress.json';
+import enLessonLang from './locales/en.lessonLang.json';
+import bnLessonLang from './locales/bn.lessonLang.json';
+import jaLessonLang from './locales/ja.lessonLang.json';
+import zhLessonLang from './locales/zh.lessonLang.json';
+import arLessonLang from './locales/ar.lessonLang.json';
+import hiLessonLang from './locales/hi.lessonLang.json';
+import urLessonLang from './locales/ur.lessonLang.json';
 
 // Languages shown in the switcher. dir = text direction (rtl for Arabic and Urdu).
 export const LANGUAGES = [
@@ -122,13 +143,13 @@ const saved = localStorage.getItem(STORAGE_KEY);
 
 i18n.use(initReactI18next).init({
   resources: {
-    en: bundle(en, enPages, enCatalog, enStudent, enAccount, enReader, enPanels, enTeacher, enTeacher2, enShared, enAdmin, enAdminCourses, enCoursePrice),
-    bn: bundle(bn, bnPages, bnCatalog, bnStudent, bnAccount, bnReader, bnPanels, bnTeacher, bnTeacher2, bnShared, bnAdmin, bnAdminCourses, bnCoursePrice),
-    ja: bundle(ja, jaPages, jaCatalog, jaStudent, jaAccount, jaReader, jaPanels, jaTeacher, jaTeacher2, jaShared, jaAdmin, jaAdminCourses, jaCoursePrice),
-    zh: bundle(zh, zhPages, zhCatalog, zhStudent, zhAccount, zhReader, zhPanels, zhTeacher, zhTeacher2, zhShared, zhAdmin, zhAdminCourses, zhCoursePrice),
-    ar: bundle(ar, arPages, arCatalog, arStudent, arAccount, arReader, arPanels, arTeacher, arTeacher2, arShared, arAdmin, arAdminCourses, arCoursePrice),
-    hi: bundle(hi, hiPages, hiCatalog, hiStudent, hiAccount, hiReader, hiPanels, hiTeacher, hiTeacher2, hiShared, hiAdmin, hiAdminCourses, hiCoursePrice),
-    ur: bundle(ur, urPages, urCatalog, urStudent, urAccount, urReader, urPanels, urTeacher, urTeacher2, urShared, urAdmin, urAdminCourses, urCoursePrice),
+    en: bundle(en, enPages, enCatalog, enStudent, enAccount, enReader, enPanels, enTeacher, enTeacher2, enShared, enAdmin, enAdminCourses, enCoursePrice, enReport, enProgress, enLessonLang),
+    bn: bundle(bn, bnPages, bnCatalog, bnStudent, bnAccount, bnReader, bnPanels, bnTeacher, bnTeacher2, bnShared, bnAdmin, bnAdminCourses, bnCoursePrice, bnReport, bnProgress, bnLessonLang),
+    ja: bundle(ja, jaPages, jaCatalog, jaStudent, jaAccount, jaReader, jaPanels, jaTeacher, jaTeacher2, jaShared, jaAdmin, jaAdminCourses, jaCoursePrice, jaReport, jaProgress, jaLessonLang),
+    zh: bundle(zh, zhPages, zhCatalog, zhStudent, zhAccount, zhReader, zhPanels, zhTeacher, zhTeacher2, zhShared, zhAdmin, zhAdminCourses, zhCoursePrice, zhReport, zhProgress, zhLessonLang),
+    ar: bundle(ar, arPages, arCatalog, arStudent, arAccount, arReader, arPanels, arTeacher, arTeacher2, arShared, arAdmin, arAdminCourses, arCoursePrice, arReport, arProgress, arLessonLang),
+    hi: bundle(hi, hiPages, hiCatalog, hiStudent, hiAccount, hiReader, hiPanels, hiTeacher, hiTeacher2, hiShared, hiAdmin, hiAdminCourses, hiCoursePrice, hiReport, hiProgress, hiLessonLang),
+    ur: bundle(ur, urPages, urCatalog, urStudent, urAccount, urReader, urPanels, urTeacher, urTeacher2, urShared, urAdmin, urAdminCourses, urCoursePrice, urReport, urProgress, urLessonLang),
   },
   lng: LANGUAGES.some((l) => l.code === saved) ? saved : 'en', // English by default
   fallbackLng: 'en', // a missing translation shows the English text

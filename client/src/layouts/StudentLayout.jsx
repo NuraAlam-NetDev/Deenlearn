@@ -10,6 +10,7 @@ export default function StudentLayout() {
     { to: '/student/bookmarks', label: t('student.nav.bookmarks'), icon: 'bookmark' },
     { to: '/student/notes', label: t('student.nav.notes'), icon: 'clipboard' },
     { to: '/student/certificates', label: t('student.nav.certificates'), icon: 'award' },
+    { to: '/student/report', label: t('report.nav'), icon: 'chart' },
     { to: '/student/profile', label: t('student.nav.profile'), icon: 'user' },
   ];
 

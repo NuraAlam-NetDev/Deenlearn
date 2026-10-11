@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { adminStudents, adminStudentReport } from '../controllers/studentProgressController.js';
+import { studentListQuery } from '../validators/progress.js';
 import { protect, authorize, requireSuperAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { auditChanges } from '../middleware/audit.js';
@@ -35,6 +37,10 @@ router.delete('/courses/:id', deleteCourse);
 router.get('/orders', validate(ordersQuery, 'query'), listOrders);
 router.patch('/orders/:id/approve', approveOrder);
 router.patch('/orders/:id/reject', validate(rejectOrderSchema), rejectOrder);
+
+// Student progress across the platform (admins and the super admin)
+router.get('/students', validate(studentListQuery, 'query'), adminStudents);
+router.get('/students/:studentId/report', adminStudentReport);
 
 // Super admin only. For admins these answer 404, the same as any unknown route.
 router.post('/admins', requireSuperAdmin, validate(createAdminSchema), createAdmin);

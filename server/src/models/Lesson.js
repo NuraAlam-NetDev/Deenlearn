@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
+import { LESSON_LANGUAGES } from '../utils/languages.js';
 
 const attachmentSchema = new mongoose.Schema(
   {
+    // Language of this file (a lesson can have the same PDF in several languages)
+    language: { type: String, enum: LESSON_LANGUAGES, default: 'en' },
+
     name: {
       type: String,
       required: true,
