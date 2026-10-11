@@ -1,2 +1,8 @@
-
-   { "source": "/api/:path*", "destination": "https://deenlearn-api.onrender.com/api/:path*" }
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://your-backend.onrender.com/api/$1"
+    }
+  ]
+}
