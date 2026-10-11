@@ -8,6 +8,7 @@ export default function TeacherLayout() {
     { to: '/teacher', label: t('teacher.nav.dashboard'), icon: 'home', end: true },
     { to: '/teacher/courses', label: t('teacher.nav.courses'), icon: 'book' },
     { to: '/teacher/students', label: t('progress.nav'), icon: 'users' },
+    { to: '/teacher/cash', label: t('cash.navTeacher'), icon: 'award' },
   ];
 
   return <DashboardLayout portal="teacher" links={links} />;

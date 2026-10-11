@@ -1,0 +1,25 @@
+{
+  "cash": {
+    "navTeacher": "Cash payments",
+    "chooseHint": "Pay with bKash, Nagad, card or cash. Cash is confirmed by your teacher, then approved by the admin.",
+    "phoneLabel": "Mobile number (bKash / Nagad)",
+    "phoneHint": "11 digits, e.g. 01712345678",
+    "phoneInvalid": "Enter a valid 11-digit Bangladeshi mobile number",
+    "optionBdt": "Pay {{amount}} BDT with bKash / Nagad / card",
+    "optionCash": "Pay {{amount}} BDT in cash to the teacher",
+    "optionUsd": "Pay {{amount}} USD by card",
+    "redirecting": "Opening the payment page…",
+    "sent": "Cash request sent. Pay the teacher in person. The course opens after the teacher confirms and the admin approves.",
+    "teacherTitle": "Cash payments",
+    "teacherSubtitle": "Students who paid you in cash. Confirm once you have the money; the admin then approves the enrollment.",
+    "emptyTitle": "No cash payments waiting",
+    "emptyText": "When a student chooses cash for your course, it will appear here.",
+    "receiptLabel": "Receipt number",
+    "receiptPlaceholder": "Receipt number (optional)",
+    "confirm": "I received the cash",
+    "reject": "Reject",
+    "rejectPrompt": "Why are you rejecting this cash payment? (at least 3 characters)",
+    "confirmedToast": "Confirmed. The admin will approve the enrollment.",
+    "rejectedToast": "Cash payment rejected."
+  }
+}

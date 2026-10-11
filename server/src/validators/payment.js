@@ -3,7 +3,7 @@ import { objectId } from './common.js';
 
 export const checkoutSchema = z.object({
   courseId: objectId,
-  provider: z.enum(['sslcommerz', 'stripe']),
+  provider: z.enum(['sslcommerz', 'stripe', 'cash']),
   // Needed for bKash / Nagad (SSLCommerz). Bangladeshi mobile number, e.g. 01712345678
   phone: z
     .string()

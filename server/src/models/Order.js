@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
-export const PROVIDERS = ['sslcommerz', 'stripe'];
+export const PROVIDERS = ['sslcommerz', 'stripe', 'cash'];
 export const CURRENCIES = ['BDT', 'USD'];
-export const ORDER_STATUSES = ['pending', 'awaiting_approval', 'approved', 'rejected', 'failed', 'cancelled'];
+export const ORDER_STATUSES = ['pending', 'cash_pending', 'awaiting_approval', 'approved', 'rejected', 'failed', 'cancelled'];
 
 // Lifecycle:
 //   pending -> (gateway confirms money) -> awaiting_approval -> approved (enrolled) | rejected

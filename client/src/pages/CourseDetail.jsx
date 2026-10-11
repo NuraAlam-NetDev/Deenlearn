@@ -15,9 +15,10 @@ import ProgressBar from '../components/ui/ProgressBar.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import TextBlock from '../components/ui/TextBlock.jsx';
 import { homeFor } from '../utils/roles.js';
+import PaymentOptions from '../components/payments/PaymentOptions.jsx';
 
 // The box next to the course: what the visitor can do depends on who they are
-function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, enrolling, onEnroll, location }) {
+function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, enrolling, onEnroll, location, course }) {
   const { t } = useTranslation();
   let body;
 
@@ -61,12 +62,17 @@ function EnrollPanel({ user, authLoading, canManage, enrollment, lessonCount, en
       </>
     );
   } else if (user.role === 'student') {
+    const paid = course && (course.priceBDT > 0 || course.priceUSD > 0);
     body = (
       <>
         <p className="text-sm text-slate-600">{t('courseDetail.joinPrompt', { n: lessonCount })}</p>
-        <Button full size="lg" loading={enrolling} onClick={onEnroll}>
-          {t('courseDetail.enrollNow')}
-        </Button>
+        {paid ? (
+          <PaymentOptions course={course} />
+        ) : (
+          <Button full size="lg" loading={enrolling} onClick={onEnroll}>
+            {t('courseDetail.enrollNow')}
+          </Button>
+        )}
       </>
     );
   } else {
@@ -168,6 +174,7 @@ export default function CourseDetail() {
             enrolling={enrolling}
             onEnroll={handleEnroll}
             location={location}
+            course={course}
           />
         </aside>
 

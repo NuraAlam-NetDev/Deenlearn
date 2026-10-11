@@ -46,13 +46,31 @@ export const checkout = asyncHandler(async (req, res) => {
   const open = await Order.exists({
     student: req.user._id,
     course: course._id,
-    $or: [{ status: 'awaiting_approval' }, { status: 'pending', createdAt: { $gte: hourAgo } }],
+    $or: [
+      { status: 'awaiting_approval' },
+      { status: 'cash_pending' },
+      { status: 'pending', createdAt: { $gte: hourAgo } },
+    ],
   });
   if (open) throw httpError(409, 'You already have a payment for this course in progress');
 
-  const currency = provider === 'sslcommerz' ? 'BDT' : 'USD';
+  // bKash/Nagad/card (SSLCommerz) and cash are in BDT; international card is in USD
+  const currency = provider === 'stripe' ? 'USD' : 'BDT';
   const amount = priceFor(course, currency);
   if (!amount) throw httpError(400, 'This course is not priced in that currency');
+
+  if (provider === 'cash') {
+    // No gateway: the student pays the teacher in person. Waits for the teacher's confirmation.
+    const order = await Order.create({
+      student: req.user._id,
+      course: course._id,
+      provider: 'cash',
+      amount,
+      currency: 'BDT',
+      status: 'cash_pending',
+    });
+    return res.status(201).json({ orderId: order._id, status: order.status });
+  }
 
   if (provider === 'sslcommerz') {
     if (!sslConfigured()) throw httpError(503, 'bKash / card payment is not set up yet');

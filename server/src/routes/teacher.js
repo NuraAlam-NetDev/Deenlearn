@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { listCashOrders, confirmCash, rejectCash } from '../controllers/cashController.js';
+import { confirmCashSchema, rejectCashSchema } from '../validators/cash.js';
 import { teacherStudents, teacherStudentReport } from '../controllers/studentProgressController.js';
 import { studentListQuery } from '../validators/progress.js';
 import { protect, authorize, requireApprovedTeacher } from '../middleware/auth.js';
@@ -77,5 +79,10 @@ router.delete('/lessons/:id/attachments/:attachmentId', loadOwnedLesson, removeA
 // Students in my own courses
 router.get('/students', validate(studentListQuery, 'query'), teacherStudents);
 router.get('/students/:studentId/report', teacherStudentReport);
+
+// Cash payments: the teacher confirms that the money arrived (or rejects it)
+router.get('/cash-orders', listCashOrders);
+router.patch('/cash-orders/:id/confirm', validate(confirmCashSchema), confirmCash);
+router.patch('/cash-orders/:id/reject', validate(rejectCashSchema), rejectCash);
 
 export default router;
